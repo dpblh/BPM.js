@@ -10,21 +10,106 @@
 import React from 'react';
 import Home from './Home';
 import Layout from '../../components/Layout';
+import Scheme from '../../data/virtualizers/scheme';
+import Node from '../../data/virtualizers/node';
+import Edge from '../../data/virtualizers/edge';
 
 async function action({ fetch }) {
+  const loadGraph = async id => {
+    const resp = await fetch('/graphql', {
+      body: JSON.stringify({
+        query: `query($id: String!, $timestamp: Float!) {
+          scheme(id: $id, timestamp: $timestamp){
+            id,
+            name,
+            desc,
+            startNode,
+            graph{
+              edges{
+                id,
+                source,
+                target,
+                roles,
+                condition
+              },
+              nodes{
+                id,
+                name,
+                desc,
+                position{x,y},
+                scheme
+              }
+            }
+          }
+        }`,
+        variables: {
+          id,
+          timestamp: Date.now(),
+        },
+      }),
+    });
+    const { data } = await resp.json();
+    if (!data || !data.scheme) throw new Error('Failed to load the news feed.');
+    return data.scheme;
+  };
+
+  const saveGraph = async ({ id, name, desc, startNode, nodes, edges }) => {
+    const resp = await fetch('/graphql', {
+      body: JSON.stringify({
+        query: `mutation($id: String!, $name: String!, $desc: String!, $startNode: String!, $nodes: [NodeInput], $edges: [EdgeInput]) {
+          scheme(id: $id, name: $name, desc: $desc, startNode: $startNode, nodes: $nodes, edges: $edges) {
+            id,
+            name,
+            desc,
+            startNode,
+            graph{
+              edges{
+                id,
+                source,
+                target,
+                roles,
+                condition
+              },
+              nodes{
+                id,
+                name,
+                desc,
+                position{x,y},
+                scheme
+              }
+            }
+          }
+        }`,
+        variables: { id, name, desc, startNode, nodes, edges },
+      }),
+    });
+    const { data } = await resp.json();
+    if (!data || !data.scheme) throw new Error('Failed to load the news feed.');
+    return data.scheme;
+  };
+
   const resp = await fetch('/graphql', {
     body: JSON.stringify({
-      query: '{news{title,link,content}}',
+      query: `{
+      schemes{
+        id,
+        name,
+        desc,
+        startNode
+      }
+    }`,
     }),
   });
   const { data } = await resp.json();
-  if (!data || !data.news) throw new Error('Failed to load the news feed.');
+  if (!data || !data.schemes) throw new Error('Failed to load the news feed.');
+  const schemes = data.schemes;
+
   return {
     chunks: ['home'],
     title: 'React Starter Kit',
     component: (
       <Layout>
-        <Home news={data.news} />
+        <Home {...{ loadGraph, saveGraph, schemes }} />
       </Layout>
     ),
   };

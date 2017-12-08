@@ -1,0 +1,13 @@
+:global(.element-tools) {
+  display: none;
+  cursor: pointer;
+}
+
+:global(.highlighted .element-tools) {
+  display: inline;
+}
+
+:global(.highlighted .element-process), :global(.cccc:hover .element-process) {
+  stroke: black;
+  stroke-dasharray: 5;
+}

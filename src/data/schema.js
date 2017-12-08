@@ -8,12 +8,16 @@
  */
 
 import {
-  GraphQLSchema as Schema,
   GraphQLObjectType as ObjectType,
+  GraphQLSchema as Schema,
 } from 'graphql';
 
 import me from './queries/me';
 import news from './queries/news';
+import historyOfScheme from './queries/historyOfScheme';
+import scheme from './queries/scheme';
+import schemes from './queries/schemes';
+import schemeM from './mutation/scheme';
 
 const schema = new Schema({
   query: new ObjectType({
@@ -21,6 +25,15 @@ const schema = new Schema({
     fields: {
       me,
       news,
+      scheme,
+      schemes,
+      historyOfScheme,
+    },
+  }),
+  mutation: new ObjectType({
+    name: 'Mutation',
+    fields: {
+      scheme: schemeM,
     },
   }),
 });

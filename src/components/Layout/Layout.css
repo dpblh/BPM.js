@@ -20,6 +20,7 @@
  * ========================================================================== */
 
 html {
+  height: 100%;
   color: #222;
   font-weight: 100;
   font-size: 1em; /* ~16px; */
@@ -29,6 +30,20 @@ html {
 
 body {
   margin: 0;
+  height: 100%;
+}
+
+:global(#app) {
+  height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.root {
+  height: 100%;
 }
 
 a {

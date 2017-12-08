@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "name": "jointjs",
+  "main": "./jointjs.server.js",
+  "browser": "./jointjs.client.js"
+}

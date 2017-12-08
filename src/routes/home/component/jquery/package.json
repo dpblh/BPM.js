@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "name": "jquery",
+  "main": "./jquery.server.js",
+  "browser": "./jquery.client.js"
+}

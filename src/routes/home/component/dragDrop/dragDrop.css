@@ -1,0 +1,12 @@
+:global(.dragged) {
+  cursor: all-scroll;
+}
+
+:global(.dragging) {
+  pointer-events: none;
+  transform: rotate(-15deg);
+}
+
+:global(.clone-dragged) {
+  opacity: 0;
+}

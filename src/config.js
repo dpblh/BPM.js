@@ -15,8 +15,24 @@ if (process.env.BROWSER) {
   );
 }
 
+const DATABASE_HOST = process.env.DATABASE_HOST || 'localhost';
+const DATABASE_PORT = process.env.DATABASE_PORT || 27017;
+const DATABASE_NAME = process.env.DATABASE_NAME || 'state-machine';
+
 module.exports = {
-  // Node.js app
+  mongo: {
+    connectionUrl: DATABASE_HOST.split(',')
+      .map(host => `mongodb://${host}:${DATABASE_PORT}/${DATABASE_NAME}`)
+      .join(','),
+    options: {
+      user: process.env.DATABASE_USER,
+      pass: process.env.DATABASE_PASS,
+      db: {
+        readPreference: process.env.DATABASE_READPREFERENCE,
+      },
+    },
+  },
+  // NodeScheme.js app
   port: process.env.PORT || 3000,
 
   // API Gateway

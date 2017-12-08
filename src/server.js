@@ -29,6 +29,7 @@ import models from './data/models';
 import schema from './data/schema';
 import assets from './assets.json'; // eslint-disable-line import/no-unresolved
 import config from './config';
+import './seed';
 
 const app = express();
 
@@ -40,7 +41,7 @@ global.navigator = global.navigator || {};
 global.navigator.userAgent = global.navigator.userAgent || 'all';
 
 //
-// Register Node.js middleware
+// Register NodeScheme.js middleware
 // -----------------------------------------------------------------------------
 app.use(express.static(path.resolve(__dirname, 'public')));
 app.use(cookieParser());

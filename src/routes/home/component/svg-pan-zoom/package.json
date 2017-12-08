@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "name": "svg-pan-zoom",
+  "main": "./svg-pan-zoom.server.js",
+  "browser": "./svg-pan-zoom.client.js"
+}
