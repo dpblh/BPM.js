@@ -10,7 +10,6 @@ export default class Virtualize {
     return s && s.value;
   }
   equalsV(property, value, timestamp = Date.now()) {
-    console.log(property);
     return _.isEqual(this.getV(property, timestamp), value);
   }
 }

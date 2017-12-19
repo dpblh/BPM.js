@@ -1,4 +1,5 @@
 import joint, { V } from 'jointjs';
+import _ from 'lodash';
 import svgPanZoom from '../svg-pan-zoom';
 
 joint.shapes.tm = {};
@@ -124,13 +125,13 @@ joint.shapes.tm.Process = joint.shapes.tm.toolElement.extend({
           magnet: true,
           'stroke-width': 1,
           r: 30,
-          transform: 'translate(30, 30)',
+          transform: 'translate(50, 50)',
         },
         '.element-process-2': {
           'stroke-width': 1,
           r: 25,
           stroke: 'black',
-          transform: 'translate(30, 30)',
+          transform: 'translate(50, 50)',
         },
         text: { ref: '.element-process' },
         '.element-tools': { refX: '100%' },
@@ -138,6 +139,31 @@ joint.shapes.tm.Process = joint.shapes.tm.toolElement.extend({
       size: { width: 100, height: 100 },
     },
     joint.shapes.tm.toolElement.prototype.defaults,
+  ),
+});
+
+joint.shapes.tm.StartProcess = joint.shapes.tm.Process.extend({
+  defaults: joint.util.deepSupplement(
+    {
+      type: 'tm.StartProcess',
+      attrs: {
+        '.element-process': {
+          r: 20,
+        },
+        '.element-process-2': {
+          fill: 'black',
+          r: 15,
+        },
+        text: {
+          'paint-order': 'stroke',
+          stroke: 'white',
+          'stroke-width': '8px',
+          'font-weight': 600,
+        },
+      },
+      size: { width: 60, height: 60 },
+    },
+    joint.shapes.tm.Process.prototype.defaults,
   ),
 });
 
@@ -154,7 +180,12 @@ joint.shapes.tm.MyPaperFactory = ({ el }) => {
     linkView: joint.dia.LinkView,
     elementView: joint.shapes.tm.ProcessView,
     linkPinning: false,
-    defaultLink: new joint.shapes.MyLink({}),
+    defaultLink: () =>
+      joint.shapes.tm.MyLinkFactory({
+        data: { hock: true },
+        graph,
+        newLink: true,
+      }), // new joint.shapes.MyLink({ newLink: true }),
     model: graph,
     validateConnection(cellViewS, magnetS, cellViewT, magnetT, end, linkView) {
       const links = graph.getLinks();
@@ -224,37 +255,150 @@ joint.shapes.tm.MyPaperFactory = ({ el }) => {
   return paper;
 };
 
+/*
+cell.on('change:attrs', (element, { data, origin_data }) => {
+    const color = _.isEqual(data, origin_data) ? 'black' : 'red';
+    const changedStartNode = data.startNode === origin_data.startNode;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      if (changedStartNode) {
+        if (data.startNode) {
+          const elements = graph.getElements();
+          elements
+            .filter(el => el.id !== data.id)
+            .forEach(el => el.attr('data/startNode', false));
+        }
+        cell.attr('text', startNode
+          ? {
+            text: name,
+          }
+          : startAttrs.text);
+      }
+      cell.attr('text/stroke', color);
+      cell.attr('text/text', data.name);
+    }, 100);
+  });
+
+
+
+  const attrs = {
+      elementProcess: {
+        r: 20,
+      },
+      elementProcess2: {
+        fill: 'black',
+        r: 15,
+      },
+      text: {
+        'paint-order': 'stroke',
+        stroke: 'white',
+        'stroke-width': '8px',
+        'font-weight': 600,
+      },
+    },
+    size = { width: 60, height: 60 };
+ */
+
 joint.shapes.tm.MyStateFactory = ({
   graph,
   data,
-  data: { id, name, position: { x, y } },
+  newState = false,
+  data: { id, name, position: { x, y }, startNode },
 }) => {
+  const startAttrs = {
+    rotatable: { class: 'rotatable cccc start-node' },
+    elementProcess: { r: 20, transform: 'translate(30, 30)' },
+    elementProcess2: { r: 15, transform: 'translate(30, 30)' },
+    size: { width: 60, height: 60 },
+  };
+  const otherAttrs = {
+    rotatable: { class: 'rotatable cccc' },
+    elementProcess: { r: 30, transform: 'translate(50, 50)' },
+    elementProcess2: { r: 25, transform: 'translate(50, 50)' },
+    size: { width: 100, height: 100 },
+  };
+  const makeStart = el => {
+    el.attr('data/startNode', true);
+    el.attr('.rotatable', startAttrs.rotatable);
+    el.attr('.element-process', startAttrs.elementProcess);
+    el.attr('.element-process-2', startAttrs.elementProcess2);
+    el.prop('size', startAttrs.size);
+  };
+
+  const makeOther = el => {
+    el.attr('data/startNode', false);
+    el.attr('.rotatable', otherAttrs.rotatable);
+    el.attr('.element-process', otherAttrs.elementProcess);
+    el.attr('.element-process-2', otherAttrs.elementProcess2);
+    el.prop('size', otherAttrs.size);
+  };
+
   const cell = new joint.shapes.tm.Process({
     id,
     position: { x, y },
-    attrs: { text: { text: name }, data },
+    attrs: {
+      '.rotatable': startNode ? startAttrs.rotatable : otherAttrs.rotatable,
+      '.element-process': startNode
+        ? startAttrs.elementProcess
+        : otherAttrs.elementProcess,
+      '.element-process-2': startNode
+        ? startAttrs.elementProcess2
+        : otherAttrs.elementProcess2,
+      text: { text: name, stroke: newState ? 'red' : 'black' },
+      data,
+      origin_data: newState ? {} : Object.assign({}, data),
+    },
+    size: startNode ? startAttrs.size : otherAttrs.size,
+  });
+  let timeout;
+  cell.on('change:attrs', (element, { data, origin_data }) => {
+    const color = _.isEqual(data, origin_data) ? 'black' : 'red';
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      if (data.startNode) {
+        const elements = graph.getElements();
+
+        elements.filter(el => el.id !== data.id).forEach(makeOther);
+
+        makeStart(cell);
+      } else {
+        makeOther(cell);
+      }
+      cell.attr('text/stroke', color);
+      cell.attr('text/text', data.name);
+    }, 100);
   });
   graph.addCell(cell);
   return cell;
 };
 
-joint.shapes.tm.MyStartStateFactory = ({
-  graph,
-  data,
-  data: { id, name, position: { x, y } },
-}) => {
-  const cell = new joint.shapes.fsa.StartState({
-    id,
-    position: { x, y },
-    attrs: { text: { text: name }, data },
-  });
-  graph.addCell(cell);
-  return cell;
-};
+// joint.shapes.tm.MyStartStateFactory = ({
+//   graph,
+//   data,
+//   data: { id, name, position: { x, y } },
+// }) => {
+//   const cell = new joint.shapes.fsa.StartState({
+//     id,
+//     position: { x, y },
+//     attrs: { text: { text: name }, data, origin_data: Object.assign({}, data) },
+//   });
+//   let timeout;
+//   cell.on('change:attrs', (element, { data, origin_data }) => {
+//     const color = _.isEqual(data, origin_data) ? 'black' : 'red';
+//     clearTimeout(timeout);
+//     timeout = setTimeout(() => {
+//       cell.attr('text/stroke', color);
+//       cell.attr('text/text', data.name);
+//     }, 100);
+//   });
+//   graph.addCell(cell);
+//   return cell;
+// };
 
 joint.shapes.tm.MyLinkFactory = ({
   data,
   data: { id, source, target, name },
+  newLink = false,
   graph,
 }) => {
   const cell = new joint.shapes.MyLink({
@@ -262,7 +406,31 @@ joint.shapes.tm.MyLinkFactory = ({
     source: { id: source },
     target: { id: target },
     labels: [{ attrs: { text: { text: name } } }],
-    attrs: { data },
+    attrs: {
+      '.connection': { stroke: newLink ? 'red' : 'black' },
+      data,
+      origin_data: newLink ? {} : Object.assign({}, data),
+    },
+  });
+  let timeout;
+  cell.on('change:target', cell => {
+    const target = cell.get('target').id;
+    if (target) {
+      cell.attr('data/target', target);
+    }
+  });
+  cell.on('change:source', cell => {
+    const source = cell.get('source').id;
+    if (source) {
+      cell.attr('data/source', source);
+    }
+  });
+  cell.on('change:attrs', (element, { data, origin_data }) => {
+    const color = _.isEqual(data, origin_data) ? 'black' : 'red';
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      cell.attr('.connection/stroke', color);
+    }, 100);
   });
   graph.addCell(cell);
   return cell;

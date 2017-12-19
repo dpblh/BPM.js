@@ -42,9 +42,18 @@ const scheme = {
   },
   async resolve(a, { id, name, desc, startNode, nodes, edges }) {
     try {
-      const schema = await Scheme.findOne({ _id: id }).then(
-        s => new SchemeV(s),
-      );
+      // find or create
+      const schema = await Scheme.findOne({ _id: id })
+        .then(s => new SchemeV(s).attrs())
+        .then(async last => {
+          await Scheme.updateFromDTO({ id, name, desc, startNode }, last);
+          return Scheme.findOne({ _id: id }).then(s => new SchemeV(s));
+        })
+        .catch(async () => {
+          await Scheme.createFromDTO({ id, name, desc, startNode });
+          return Scheme.findOne({ _id: id }).then(s => new SchemeV(s));
+        });
+
       // get last version graph
       const { nodesOrigin, edgesOrigin } = await schema
         .graph()

@@ -20,6 +20,35 @@ const SchemeScheme = new mongoose.Schema({
 // SchemeScheme.methods.id = function() {
 //   return this._id
 // } ;
+SchemeScheme.statics.createFromDTO = function(scheme) {
+  console.log('create');
+  const { id, name, desc, startNode } = scheme;
+  return this.create({
+    _id: id,
+    name: [{ timestamp: Date.now(), value: name }],
+    desc: [{ timestamp: Date.now(), value: desc }],
+    startNode: [{ timestamp: Date.now(), value: startNode }],
+    scheme,
+  });
+};
+
+SchemeScheme.statics.updateFromDTO = function(current, last) {
+  console.log('update');
+  const { id, name, desc, startNode } = current;
+  console.log(id, name, desc, startNode);
+  console.log(last);
+  const update = { $push: {} };
+  const query = { _id: id };
+
+  if (last.name !== name)
+    update.$push.name = { timestamp: Date.now(), value: name };
+  if (last.desc !== desc)
+    update.$push.desc = { timestamp: Date.now(), value: desc };
+  // it need to update
+  update.$push.startNode = { timestamp: Date.now(), value: startNode };
+
+  return this.update(query, update);
+};
 
 SchemeScheme.methods = {
   // _name(timestamp = Date.now()) {

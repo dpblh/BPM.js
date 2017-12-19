@@ -32,7 +32,7 @@ EdgeScheme.statics.updateFromDTO = function(n1, last) {
     update.$push.target = { timestamp: Date.now(), value: target };
   if (last.roles !== roles)
     update.$push.roles = { timestamp: Date.now(), value: roles };
-  if (last.roles !== roles)
+  if (last.condition !== condition)
     update.$push.condition = { timestamp: Date.now(), value: condition };
 
   return this.update(query, update);

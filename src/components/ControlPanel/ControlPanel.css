@@ -206,3 +206,7 @@
 .button.control:hover {
   background-color: #f8f8f8;
 }
+
+:global(.title-comment) {
+  padding: 16px;
+}
