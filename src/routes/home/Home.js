@@ -105,6 +105,8 @@ class Home extends React.Component {
     });
 
     $('.drag-me').dragged((event, drag) => {
+      const { originScheme } = this.state;
+      if (!originScheme.id) return console.log("scheme isn't exists");
       const id = drag.attr('id');
       const scheme = this.props.schemes.find(s => s.id === id);
       const { sx, sy } = paper.scale();
@@ -113,6 +115,7 @@ class Home extends React.Component {
 
       state({
         data: {
+          id: vis.util.randomUUID(),
           position: {
             x: (event.clientX - tx) / sx - 50,
             y: (event.clientY - ty) / sy - 50,
@@ -143,8 +146,12 @@ class Home extends React.Component {
       position: el.position(),
     }));
 
-    const startNode = elements.find(el => el.attr('data/startNode') === true)
-      .id;
+    const startNodeModel = elements.find(
+      el => el.attr('data/startNode') === true,
+    );
+    // assept(true, 'message')
+    if (!startNodeModel) return console.log('startNode not specific');
+    const startNode = startNodeModel.id;
 
     const updatedEdge = links.map(el => ({
       id: el.id,
@@ -204,6 +211,26 @@ class Home extends React.Component {
       const originScheme = await loadGraph(schemeNone.id, timestamp);
       this.drawScheme(originScheme);
     }
+  };
+
+  schemeClear = () => {
+    this.graph.clear();
+    this.setState({
+      originScheme: {},
+      scheme: {},
+    });
+  };
+
+  newScheme = () => {
+    this.drawScheme({
+      id: vis.util.randomUUID(),
+      name: 'new',
+      desc: 'new',
+      graph: {
+        nodes: [],
+        edges: [],
+      },
+    });
   };
 
   changeScheme = scheme => {
@@ -286,12 +313,14 @@ class Home extends React.Component {
   render() {
     const {
       openScheme,
+      newScheme,
       saveSheme,
       changeScheme,
       openSchemeDesc,
       showHistoryHandler,
       toggleMenu,
       toggleTab,
+      schemeClear,
     } = this;
     const { schemes } = this.props;
     const {
@@ -335,9 +364,11 @@ class Home extends React.Component {
               toggleMenu,
               toggleTab,
               openScheme,
+              newScheme,
               saveSheme,
               changeScheme,
               showHistoryHandler,
+              schemeClear,
             },
           }}
         />

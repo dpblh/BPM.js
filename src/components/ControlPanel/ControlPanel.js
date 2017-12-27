@@ -7,11 +7,15 @@ import { createForm } from 'rc-form';
 
 class SchemeForm extends Component {
   onChange = () => {
-    const { form: { validateFields }, changeScheme } = this.props;
+    const {
+      form: { validateFields },
+      scheme: { id },
+      changeScheme,
+    } = this.props;
 
     setTimeout(() => {
       validateFields((error, { name, desc }) => {
-        changeScheme({ name, desc });
+        changeScheme({ name, desc, id });
       });
     });
   };
@@ -221,6 +225,7 @@ class ControlPanel extends Component {
       handler: { changeScheme },
       showHistory,
     } = this.props;
+    console.log(scheme);
     return (
       <div className={s.root}>
         <div
@@ -264,22 +269,32 @@ class ControlPanel extends Component {
           >
             <div className={s.groupButton}>
               <div
-                className={cx(s.button, s.control)}
+                className={cx(s.button, s.control, scheme.id ? '' : s.disabled)}
                 onClick={this.props.handler.saveSheme}
               >
-                <div className={s.buttonText}>Save</div>
-              </div>
-              <div className={cx(s.button, s.control)}>
-                <div className={s.buttonText}>Clear</div>
-              </div>
-              <div className={cx(s.button, s.control)}>
-                <div className={s.buttonText}>New</div>
+                <div className={cx(s.buttonText)}>Save</div>
               </div>
               <div
-                className={cx(s.button, s.control)}
+                className={cx(s.button, s.control, scheme.id ? '' : s.disabled)}
+                onClick={this.props.handler.schemeClear}
+              >
+                <div className={cx(s.buttonText)}>Clear</div>
+              </div>
+              <div className={cx(s.button, s.control)}>
+                <div
+                  className={s.buttonText}
+                  onClick={this.props.handler.newScheme}
+                >
+                  New
+                </div>
+              </div>
+              <div
+                className={cx(s.button, s.control, scheme.id ? '' : s.disabled)}
                 onClick={this.props.handler.showHistoryHandler}
               >
-                <div className={s.buttonText}>{ showHistory ? 'History Hide' : 'History Show' }</div>
+                <div className={cx(s.buttonText)}>
+                  {showHistory ? 'History Hide' : 'History Show'}
+                </div>
               </div>
             </div>
             <div className={s.groupButtonLabel}>Statements</div>

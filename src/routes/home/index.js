@@ -110,9 +110,10 @@ async function action({ fetch }) {
     return data.scheme;
   };
 
-  const resp = await fetch('/graphql', {
-    body: JSON.stringify({
-      query: `{
+  const loadSchemes = async () => {
+    const resp = await fetch('/graphql', {
+      body: JSON.stringify({
+        query: `{
       schemes{
         id,
         name,
@@ -120,18 +121,24 @@ async function action({ fetch }) {
         startNode
       }
     }`,
-    }),
-  });
-  const { data } = await resp.json();
-  if (!data || !data.schemes) throw new Error('Failed to load the news feed.');
-  const schemes = data.schemes;
+      }),
+    });
+    const { data } = await resp.json();
+    if (!data || !data.schemes)
+      throw new Error('Failed to load the news feed.');
+    return data.schemes;
+  };
+
+  const schemes = await loadSchemes();
 
   return {
     chunks: ['home'],
     title: 'React Starter Kit',
     component: (
       <Layout>
-        <Home {...{ loadGraph, loadHistory, saveGraph, schemes }} />
+        <Home
+          {...{ loadSchemes, loadGraph, loadHistory, saveGraph, schemes }}
+        />
       </Layout>
     ),
   };

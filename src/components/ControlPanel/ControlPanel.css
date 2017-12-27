@@ -210,3 +210,11 @@
 :global(.title-comment) {
   padding: 16px;
 }
+
+.disabled {
+  pointer-events: none;
+
+  .buttonText {
+    opacity: 0.3;
+  }
+}
