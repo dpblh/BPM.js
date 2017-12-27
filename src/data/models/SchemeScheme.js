@@ -60,10 +60,13 @@ SchemeScheme.methods = {
   // _startNode(timestamp = Date.now()) {
   //   return this.startNode.reverse().find(src => src.timestamp < timestamp);
   // },
-  async graph(timestamp) {
+  async graph(timestamp = Date.now()) {
     const startNode = new SchemeV(this).getV('startNode', timestamp);
-
-    // console.log(startNode)
+    if (!startNode)
+      return {
+        nodes: [],
+        edges: [],
+      };
 
     const nodes = await Node.find({}).then(nodes =>
       nodes

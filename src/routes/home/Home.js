@@ -8,6 +8,9 @@
  */
 
 import React from 'react';
+import 'moment/locale/ru';
+import vis from 'vis';
+import visCss from 'vis/dist/vis.css';
 import cx from 'classnames';
 import withStyles from 'isomorphic-style-loader/lib/withStyles';
 import ControlPanel from '../../components/ControlPanel';
@@ -21,10 +24,55 @@ import s from './Home.css';
 
 class Home extends React.Component {
   state = {
+    tab: 1,
     scheme: {},
     originScheme: {},
   };
   componentDidMount() {
+    const groups = new vis.DataSet([
+      {
+        id: 'name',
+        content: 'Name',
+      },
+      {
+        id: 'desc',
+        content: 'Desc',
+      },
+      {
+        id: 'startNode',
+        content: 'StartNode',
+      },
+    ]);
+    const items = [
+      { id: 1, group: 'name', content: 'item 1', start: '2013-04-20' },
+      { id: 2, group: 'desc', content: 'item 2', start: '2013-04-14' },
+      { id: 3, group: 'startNode', content: 'item 3', start: '2013-04-14' },
+    ];
+
+    const options = {
+      autoResize: true,
+      width: '100%',
+      zoomMin: 1000,
+      zoomMax: 1000 * 60 * 60 * 24 * 30 * 12,
+      height: '100%',
+      margin: {
+        item: 20,
+      },
+      locales: {
+        // create a new locale (text strings should be replaced with localized strings)
+        ru: {
+          current: 'Текущий',
+          time: 'Время',
+        },
+      },
+      locale: 'ru',
+    };
+    this.dataSet = new vis.DataSet(items);
+    this.timelineE = new vis.Timeline(this.timeline);
+    this.timelineE.setOptions(options);
+    this.timelineE.setGroups(groups);
+    this.timelineE.setItems(this.dataSet);
+
     const paper = joint.shapes.tm.MyPaperFactory({
       el: $(this.container),
     });
@@ -40,13 +88,19 @@ class Home extends React.Component {
       this.setState({
         link: linkView.model,
         tab: 3,
+        showMenu: true,
       });
+    });
+
+    paper.on('node:remove', linkView => {
+      linkView.model.remove();
     });
 
     paper.on('node:options', linkView => {
       this.setState({
         node: linkView.model,
         tab: 2,
+        showMenu: true,
       });
     });
 
@@ -73,11 +127,12 @@ class Home extends React.Component {
     });
   }
 
-  saveSheme = () => {
+  saveSheme = async () => {
+    const { saveGraph, loadHistory } = this.props;
     const links = this.graph.getLinks();
     const elements = this.graph.getElements();
 
-    const { name, desc } = this.state.scheme;
+    const { scheme: { name, desc }, showHistory } = this.state;
     const { id } = this.state.originScheme;
 
     const updatedNodes = elements.map(el => ({
@@ -99,7 +154,7 @@ class Home extends React.Component {
       roles: el.attr('data/roles') || null,
     }));
 
-    this.props.saveGraph({
+    const originSheme = await saveGraph({
       id,
       name,
       desc,
@@ -107,46 +162,47 @@ class Home extends React.Component {
       edges: updatedEdge,
       nodes: updatedNodes,
     });
+
+    this.drawScheme(originSheme);
+
+    if (showHistory) {
+      const history = await loadHistory(originSheme.id);
+
+      this.drawHistory(history);
+    }
   };
 
-  openScheme = async schemeNone => {
+  drawScheme = originScheme => {
+    const { graph: { nodes, edges }, startNode, name, desc, id } = originScheme;
+    const graph = this.graph;
+    const state = joint.shapes.tm.MyStateFactory;
+    const link = joint.shapes.tm.MyLinkFactory;
+    const scheme = { name, desc, id };
+
+    graph.clear();
+
+    nodes.forEach(data =>
+      state({ data: { ...data, startNode: data.id === startNode }, graph }),
+    );
+    edges.forEach(data =>
+      link({
+        data,
+        graph,
+      }),
+    );
+
+    this.setState({
+      originScheme,
+      scheme,
+    });
+  };
+
+  openScheme = async (schemeNone, timestamp = Date.now()) => {
     if (schemeNone.startNode.length) {
-      const graph = this.graph;
       const { loadGraph } = this.props;
 
-      const state = joint.shapes.tm.MyStateFactory;
-      const link = joint.shapes.tm.MyLinkFactory;
-
-      graph.clear();
-      const originScheme = await loadGraph(schemeNone.id);
-
-      const {
-        graph: { nodes, edges },
-        startNode,
-        name,
-        desc,
-        id,
-      } = originScheme;
-      const scheme = { name, desc, id };
-      // const startState = nodes.find(a => a.id === startNode);
-      // const otherState = nodes.filter(a => a.id !== startNode);
-
-      // start({ data: startState, graph });
-      // otherState.forEach(data => state({ data, graph }));
-      nodes.forEach(data =>
-        state({ data: { ...data, startNode: data.id === startNode }, graph }),
-      );
-      edges.forEach(data =>
-        link({
-          data,
-          graph,
-        }),
-      );
-
-      this.setState({
-        originScheme,
-        scheme,
-      });
+      const originScheme = await loadGraph(schemeNone.id, timestamp);
+      this.drawScheme(originScheme);
     }
   };
 
@@ -160,8 +216,83 @@ class Home extends React.Component {
     });
   };
 
+  drawHistory = history => {
+    const { originScheme } = this.state;
+    const uuid = vis.util.randomUUID;
+    const names = history.name.map(n => ({
+      id: uuid(),
+      group: 'name',
+      content: n.value,
+      start: n.timestamp,
+    }));
+    const descs = history.desc.map(n => ({
+      id: uuid(),
+      group: 'desc',
+      content: n.value,
+      start: n.timestamp,
+    }));
+    const graphs = history.startNode.map(n => ({
+      id: uuid(),
+      group: 'startNode',
+      content: n.value,
+      start: n.timestamp,
+    }));
+
+    this.dataSet.clear();
+    this.dataSet.add([...names, ...descs, ...graphs]);
+    this.timelineE.moveTo(Date.now());
+    // this.timelineE.fit();
+
+    this.timelineE.on('changed', event => {
+      clearTimeout(this.timeout2);
+      this.timeout2 = setTimeout(() => {
+        const { start, end } = this.timelineE.getWindow();
+        console.log(start.getTime(), end.getTime());
+        const timestamp = Math.round((start.getTime() + end.getTime()) / 2);
+
+        this.openScheme(originScheme, timestamp);
+      }, 1000);
+    });
+  };
+
+  showHistoryHandler = async () => {
+    const { originScheme, showHistory } = this.state;
+    if (showHistory) {
+      return this.setState({
+        showHistory: false,
+      });
+    }
+
+    const { loadHistory } = this.props;
+    const history = await loadHistory(originScheme.id);
+
+    this.setState({
+      showHistory: true,
+    });
+
+    this.drawHistory(history);
+  };
+
+  toggleMenu = () => {
+    const { showMenu } = this.state;
+    this.setState({ showMenu: !showMenu });
+  };
+
+  toggleTab = tab =>
+    this.setState({
+      tab,
+    });
+
   render() {
-    const { openScheme, saveSheme, changeScheme, openSchemeDesc } = this;
+    const {
+      openScheme,
+      saveSheme,
+      changeScheme,
+      openSchemeDesc,
+      showHistoryHandler,
+      toggleMenu,
+      toggleTab,
+    } = this;
     const { schemes } = this.props;
     const {
       originScheme,
@@ -170,6 +301,8 @@ class Home extends React.Component {
       node,
       link,
       tab,
+      showMenu,
+      showHistory,
     } = this.state;
 
     const nameClass = cx({
@@ -182,6 +315,11 @@ class Home extends React.Component {
       [s.descWasChanged]: originScheme.desc !== desc,
     });
 
+    const timelineClass = cx({
+      [s.timeline]: true,
+      [s.showHistory]: showHistory,
+    });
+
     return (
       <div className={s.root}>
         <ControlPanel
@@ -191,10 +329,14 @@ class Home extends React.Component {
             node,
             link,
             tab,
+            showMenu,
             handler: {
+              toggleMenu,
+              toggleTab,
               openScheme,
               saveSheme,
               changeScheme,
+              showHistoryHandler,
             },
           }}
         />
@@ -206,9 +348,17 @@ class Home extends React.Component {
           className={cx(s.container, 'can-dropped')}
           ref={container => (this.container = container)}
         />
+        <div
+          className={timelineClass}
+          ref={timeline => (this.timeline = timeline)}
+        >
+          <div className={s.ceparatorContainer}>
+            <div className={s.ceparator} />
+          </div>
+        </div>
       </div>
     );
   }
 }
 
-export default withStyles(s, dragDropCss, jointjsCss, shapesCss)(Home);
+export default withStyles(s, dragDropCss, jointjsCss, shapesCss, visCss)(Home);

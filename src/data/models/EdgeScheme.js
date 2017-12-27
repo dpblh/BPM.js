@@ -42,6 +42,22 @@ EdgeScheme.statics.updateFromDTOs = function(nodes, originMap) {
   return Promise.all(nodes.map(n1 => this.updateFromDTO(n1, originMap[n1.id])));
 };
 
+EdgeScheme.statics.disconnect = function({ id }) {
+  return this.update(
+    { _id: id },
+    {
+      $push: {
+        source: { timestamp: Date.now(), value: null },
+        target: { timestamp: Date.now(), value: null },
+      },
+    },
+  );
+};
+
+EdgeScheme.statics.disconnectAll = function(edges) {
+  return Promise.all(edges.map(n1 => this.disconnect(n1)));
+};
+
 // EdgeScheme.methods = {
 //   _source(timestamp = Date.now()) {
 //     return this.source.reverse().find(src => src.timestamp < timestamp);

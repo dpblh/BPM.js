@@ -25,7 +25,7 @@ const SchemeType = new ObjectType({
     startNode: { type: StringType }, // todo if was updated at least one node | edge. Need to update startNode timestamp
     graph: {
       type: GraphType,
-      async resolve({ id }, { timestamp = Date.now() }) {
+      async resolve({ id }, _, a, { variableValues: { timestamp } }) {
         const schema = await Scheme.findOne({ _id: id });
         return schema.graph(timestamp);
       },

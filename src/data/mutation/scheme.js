@@ -19,6 +19,8 @@ import EdgeInputType from '../types/EdgeInputType';
 import SchemeV from '../virtualizers/scheme';
 import Node from '../models/Node';
 import Edge from '../models/Edge';
+import NodeV from '../virtualizers/node';
+import EdgeV from '../virtualizers/edge';
 
 const nodeEquals = (n1, { name, desc, position }) =>
   n1.name === name && n1.desc === desc && n1.position === position;
@@ -44,10 +46,11 @@ const scheme = {
     try {
       // find or create
       const schema = await Scheme.findOne({ _id: id })
-        .then(s => new SchemeV(s).attrs())
-        .then(async last => {
+        // .then(s => new SchemeV(s).attrs())
+        .then(async s => {
+          const last = new SchemeV(s).attrs();
           await Scheme.updateFromDTO({ id, name, desc, startNode }, last);
-          return Scheme.findOne({ _id: id }).then(s => new SchemeV(s));
+          return new SchemeV(s);
         })
         .catch(async () => {
           await Scheme.createFromDTO({ id, name, desc, startNode });
@@ -55,12 +58,18 @@ const scheme = {
         });
 
       // get last version graph
-      const { nodesOrigin, edgesOrigin } = await schema
-        .graph()
-        .then(({ nodes, edges }) => ({
-          nodesOrigin: nodes,
-          edgesOrigin: edges,
-        }));
+      const nodesOrigin = await Node.find({}).then(nodes =>
+        nodes.map(edge => new NodeV(edge)),
+      );
+      const edgesOrigin = await Edge.find({}).then(edges =>
+        edges.map(edge => new EdgeV(edge)),
+      );
+      // const { nodesOrigin, edgesOrigin } = await schema
+      //   .graph()
+      //   .then(({ nodes, edges }) => ({
+      //     nodesOrigin: nodes,
+      //     edgesOrigin: edges,
+      //   }));
       // prepared hash table
       const nodesOriginMap = toMap(nodesOrigin);
       const edgesOriginMap = toMap(edgesOrigin);
@@ -70,8 +79,9 @@ const scheme = {
       // for delete
       const nodesForRemove = nodesOrigin.filter(node => !nodesMap[node.id]);
       const edgesForRemove = edgesOrigin.filter(node => !edgesMap[node.id]);
-      await Node.remove({ _id: { $in: nodesForRemove.map(a => a.id) } });
-      await Edge.remove({ _id: { $in: edgesForRemove.map(a => a.id) } });
+      await Edge.disconnectAll(edgesForRemove);
+      // await Node.remove({ _id: { $in: nodesForRemove.map(a => a.id) } });
+      // await Edge.remove({ _id: { $in: edgesForRemove.map(a => a.id) } });
 
       // remove reduced
       nodes = _.differenceBy(nodes, nodesForRemove, 'id');

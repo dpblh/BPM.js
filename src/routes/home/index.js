@@ -15,7 +15,29 @@ import Node from '../../data/virtualizers/node';
 import Edge from '../../data/virtualizers/edge';
 
 async function action({ fetch }) {
-  const loadGraph = async id => {
+  const loadHistory = async id => {
+    const resp = await fetch('/graphql', {
+      body: JSON.stringify({
+        query: `query($id: String!) {
+          historyOfScheme(id: $id){
+            id,
+            name { value, timestamp },
+            desc { value, timestamp },
+            startNode { value, timestamp },
+          }
+        }`,
+        variables: {
+          id,
+        },
+      }),
+    });
+    const { data } = await resp.json();
+    if (!data || !data.historyOfScheme)
+      throw new Error('Failed to load the news feed.');
+    return data.historyOfScheme;
+  };
+
+  const loadGraph = async (id, timestamp) => {
     const resp = await fetch('/graphql', {
       body: JSON.stringify({
         query: `query($id: String!, $timestamp: Float!) {
@@ -44,7 +66,7 @@ async function action({ fetch }) {
         }`,
         variables: {
           id,
-          timestamp: Date.now(),
+          timestamp,
         },
       }),
     });
@@ -109,7 +131,7 @@ async function action({ fetch }) {
     title: 'React Starter Kit',
     component: (
       <Layout>
-        <Home {...{ loadGraph, saveGraph, schemes }} />
+        <Home {...{ loadGraph, loadHistory, saveGraph, schemes }} />
       </Layout>
     ),
   };

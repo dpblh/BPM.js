@@ -206,38 +206,27 @@ class EdgeForm extends Component {
 const EdgeForms = createForm()(EdgeForm);
 
 class ControlPanel extends Component {
-  constructor(props) {
-    super();
-    this.state = { show: false, tab: props.tab || 1 };
-  }
+  toggleNav = () => this.props.handler.toggleMenu();
 
-  componentWillReceiveProps(props) {
-    this.setState({
-      tab: props.tab || 1,
-      show: !!(props.node || props.link || props.scheme),
-    });
-  }
-
-  toggleNav = () => {
-    this.setState({ show: !this.state.show });
-  };
-
-  toggleTab = index => () =>
-    this.setState({
-      tab: index,
-    });
+  toggleTab = index => () => this.props.handler.toggleTab(index);
 
   openScheme = scheme => () => this.props.handler.openScheme(scheme);
 
   render() {
-    const { node, link, scheme, handler: { changeScheme } } = this.props;
+    const {
+      node,
+      link,
+      scheme,
+      showMenu,
+      handler: { changeScheme },
+    } = this.props;
     return (
       <div className={s.root}>
         <div
           className={cx({
             [s.button]: true,
             [s.toggle]: true,
-            [s.show]: this.state.show,
+            [s.show]: showMenu,
           })}
           onClick={this.toggleNav}
         >
@@ -246,18 +235,18 @@ class ControlPanel extends Component {
         <div
           className={cx({
             [s.navContent]: true,
-            [s.show]: this.state.show,
+            [s.show]: showMenu,
           })}
         >
           <div className={s.tabs}>
             <div
-              className={cx(s.button, this.state.tab === 0 ? s.activeTab : '')}
+              className={cx(s.button, this.props.tab === 0 ? s.activeTab : '')}
               onClick={this.toggleTab(0)}
             >
               <div className={s.buttonText}>Подсказки</div>
             </div>
             <div
-              className={cx(s.button, this.state.tab === 1 ? s.activeTab : '')}
+              className={cx(s.button, this.props.tab === 1 ? s.activeTab : '')}
               onClick={this.toggleTab(1)}
             >
               <div className={s.buttonText}>Управление</div>
@@ -265,12 +254,12 @@ class ControlPanel extends Component {
           </div>
 
           <div
-            className={cx(s.content, this.state.tab === 0 ? s.showContent : '')}
+            className={cx(s.content, this.props.tab === 0 ? s.showContent : '')}
           >
             1
           </div>
           <div
-            className={cx(s.content, this.state.tab === 1 ? s.showContent : '')}
+            className={cx(s.content, this.props.tab === 1 ? s.showContent : '')}
           >
             <div className={s.groupButton}>
               <div
@@ -284,6 +273,12 @@ class ControlPanel extends Component {
               </div>
               <div className={cx(s.button, s.control)}>
                 <div className={s.buttonText}>New</div>
+              </div>
+              <div
+                className={cx(s.button, s.control)}
+                onClick={this.props.handler.showHistoryHandler}
+              >
+                <div className={s.buttonText}>History</div>
               </div>
             </div>
             <div className={s.groupButtonLabel}>Statements</div>
@@ -301,20 +296,20 @@ class ControlPanel extends Component {
           </div>
 
           <div
-            className={cx(s.content, this.state.tab === 2 ? s.showContent : '')}
+            className={cx(s.content, this.props.tab === 2 ? s.showContent : '')}
           >
             {node && <NodeForms {...{ node, scheme }} />}
             {/* {JSON.stringify(this.props.node)} */}
           </div>
           <div
-            className={cx(s.content, this.state.tab === 3 ? s.showContent : '')}
+            className={cx(s.content, this.props.tab === 3 ? s.showContent : '')}
           >
             {link && <EdgeForms {...{ link }} />}
             {/* {JSON.stringify(this.props.link)} */}
           </div>
 
           <div
-            className={cx(s.content, this.state.tab === 4 ? s.showContent : '')}
+            className={cx(s.content, this.props.tab === 4 ? s.showContent : '')}
           >
             {scheme && <SchemeForms {...{ scheme, changeScheme }} />}
             {/* {JSON.stringify(this.props.link)} */}

@@ -27,6 +27,36 @@
   /*max-width: var(--max-content-width);*/
 }
 
+.timeline {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  bottom: 0;
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity ease-in-out 0.15s, transform ease-in-out 0.15s;
+}
+
+.showHistory {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.ceparatorContainer {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.ceparator {
+  background: red;
+  height: 100%;
+  width: 2px;
+  margin: 0 auto;
+}
+
 .descCont {
   position: absolute;
   width: 50%;

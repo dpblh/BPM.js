@@ -180,23 +180,31 @@ joint.shapes.tm.MyPaperFactory = ({ el }) => {
     linkView: joint.dia.LinkView,
     elementView: joint.shapes.tm.ProcessView,
     linkPinning: false,
+    // disconnectLinks: true,
     defaultLink: () =>
       joint.shapes.tm.MyLinkFactory({
         data: { hock: true },
         graph,
         newLink: true,
-      }), // new joint.shapes.MyLink({ newLink: true }),
+      }),
     model: graph,
-    validateConnection(cellViewS, magnetS, cellViewT, magnetT, end, linkView) {
+    validateConnection(
+      sourceView,
+      magnetS,
+      targetView,
+      magnetT,
+      end,
+      linkView,
+    ) {
       const links = graph.getLinks();
 
-      return end === 'target'
-        ? links
-            .filter(l => l.getTargetElement())
-            .find(l => l.getTargetElement().id === cellViewS.model.id)
-        : links
-            .filter(l => l.getTargetElement())
-            .find(l => l.getTargetElement().id === cellViewS.model.id);
+      return links.find(l => {
+        const target = l.getTargetElement();
+        return (
+          (target && target.id === sourceView.model.id) ||
+          sourceView.model.attr('data/startNode')
+        );
+      });
     },
     interactive(cell) {
       return cell.model.isElement()

@@ -20,9 +20,9 @@ const scheme = {
     id: { type: StringType },
     timestamp: { type: FloatType },
   },
-  async resolve(a, { id }) {
+  async resolve(a, { id, timestamp }) {
     const schema = await Scheme.findOne({ _id: id });
-    return new SchemeV(schema).attrs();
+    return new SchemeV(schema).attrs(timestamp);
   },
 };
 

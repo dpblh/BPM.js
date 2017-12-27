@@ -27,6 +27,7 @@
     "jquery": "^3.2.1",
     "jsonwebtoken": "^8.1.0",
     "lodash": "^4.17.4",
+    "moment": "^2.20.1",
     "mongoose": "^4.13.5",
     "node-fetch": "^1.7.3",
     "normalize.css": "^7.0.0",
@@ -46,6 +47,7 @@
     "sqlite3": "^3.1.8",
     "svg-pan-zoom": "github:ariutta/svg-pan-zoom",
     "universal-router": "^5.0.0",
+    "vis": "^4.21.0",
     "whatwg-fetch": "^2.0.3"
   },
   "devDependencies": {

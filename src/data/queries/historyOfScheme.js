@@ -20,7 +20,6 @@ const historyOfScheme = {
   type: HistoryOfSchemeType,
   args: {
     id: { type: StringType },
-    timestamp: { type: FloatType },
   },
   async resolve(a, { id }) {
     return Scheme.findOne({ _id: id });
