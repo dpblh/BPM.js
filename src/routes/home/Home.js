@@ -330,6 +330,7 @@ class Home extends React.Component {
             link,
             tab,
             showMenu,
+            showHistory,
             handler: {
               toggleMenu,
               toggleTab,

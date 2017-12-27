@@ -219,6 +219,7 @@ class ControlPanel extends Component {
       scheme,
       showMenu,
       handler: { changeScheme },
+      showHistory,
     } = this.props;
     return (
       <div className={s.root}>
@@ -278,7 +279,7 @@ class ControlPanel extends Component {
                 className={cx(s.button, s.control)}
                 onClick={this.props.handler.showHistoryHandler}
               >
-                <div className={s.buttonText}>History</div>
+                <div className={s.buttonText}>{ showHistory ? 'History Hide' : 'History Show' }</div>
               </div>
             </div>
             <div className={s.groupButtonLabel}>Statements</div>
