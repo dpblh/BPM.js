@@ -135,7 +135,7 @@ class Home extends React.Component {
     const links = this.graph.getLinks();
     const elements = this.graph.getElements();
 
-    const { scheme: { name, desc }, showHistory } = this.state;
+    const { scheme: { name, desc, removed }, showHistory } = this.state;
     const { id } = this.state.originScheme;
 
     const updatedNodes = elements.map(el => ({
@@ -166,6 +166,7 @@ class Home extends React.Component {
       name,
       desc,
       startNode,
+      removed,
       edges: updatedEdge,
       nodes: updatedNodes,
     });
@@ -180,11 +181,18 @@ class Home extends React.Component {
   };
 
   drawScheme = originScheme => {
-    const { graph: { nodes, edges }, startNode, name, desc, id } = originScheme;
+    const {
+      graph: { nodes, edges },
+      startNode,
+      name,
+      desc,
+      id,
+      removed,
+    } = originScheme;
     const graph = this.graph;
     const state = joint.shapes.tm.MyStateFactory;
     const link = joint.shapes.tm.MyLinkFactory;
-    const scheme = { name, desc, id };
+    const scheme = { name, desc, id, removed };
 
     graph.clear();
 
@@ -231,6 +239,28 @@ class Home extends React.Component {
         edges: [],
       },
     });
+  };
+
+  removeScheme = async () => {
+    const { saveGraph } = this.props;
+    const {
+      graph: { nodes, edges },
+      startNode,
+      name,
+      desc,
+      id,
+    } = this.state.originScheme;
+    const originSheme = await saveGraph({
+      startNode,
+      name,
+      desc,
+      id,
+      nodes,
+      edges,
+      removed: true,
+    });
+
+    this.drawScheme(originSheme);
   };
 
   changeScheme = scheme => {
@@ -321,6 +351,7 @@ class Home extends React.Component {
       toggleMenu,
       toggleTab,
       schemeClear,
+      removeScheme,
     } = this;
     const { schemes } = this.props;
     const {
@@ -369,6 +400,7 @@ class Home extends React.Component {
               changeScheme,
               showHistoryHandler,
               schemeClear,
+              removeScheme,
             },
           }}
         />

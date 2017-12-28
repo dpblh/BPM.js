@@ -15,6 +15,7 @@ const SchemeScheme = new mongoose.Schema({
   name: { type: [new TimeStampScheme(String)] },
   desc: { type: [new TimeStampScheme(String)] },
   startNode: { type: [new TimeStampScheme(String)] },
+  removed: { type: Boolean, default: false }, // todo make it as removed. in the future I must implement collector
 });
 
 // SchemeScheme.methods.id = function() {
@@ -22,19 +23,20 @@ const SchemeScheme = new mongoose.Schema({
 // } ;
 SchemeScheme.statics.createFromDTO = function(scheme) {
   console.log('create');
-  const { id, name, desc, startNode } = scheme;
+  const { id, name, desc, startNode, removed } = scheme;
   return this.create({
     _id: id,
     name: [{ timestamp: Date.now(), value: name }],
     desc: [{ timestamp: Date.now(), value: desc }],
     startNode: [{ timestamp: Date.now(), value: startNode }],
+    removed,
     scheme,
   });
 };
 
 SchemeScheme.statics.updateFromDTO = function(current, last) {
   console.log('update');
-  const { id, name, desc, startNode } = current;
+  const { id, name, desc, startNode, removed } = current;
   console.log(id, name, desc, startNode);
   console.log(last);
   const update = { $push: {} };
@@ -44,6 +46,7 @@ SchemeScheme.statics.updateFromDTO = function(current, last) {
     update.$push.name = { timestamp: Date.now(), value: name };
   if (last.desc !== desc)
     update.$push.desc = { timestamp: Date.now(), value: desc };
+  if (last.removed !== removed) update.removed = removed;
   // it need to update
   update.$push.startNode = { timestamp: Date.now(), value: startNode };
 

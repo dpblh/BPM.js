@@ -14,8 +14,8 @@ class SchemeForm extends Component {
     } = this.props;
 
     setTimeout(() => {
-      validateFields((error, { name, desc }) => {
-        changeScheme({ name, desc, id });
+      validateFields((error, { name, desc, removed }) => {
+        changeScheme({ name, desc, id, removed });
       });
     });
   };
@@ -25,6 +25,7 @@ class SchemeForm extends Component {
       setFieldsValue({
         name: scheme.name,
         desc: scheme.desc,
+        removed: scheme.removed,
       });
     }
   }
@@ -65,6 +66,18 @@ class SchemeForm extends Component {
         {/* rules: [{ required: true }], */}
         {/* })} */}
         {/* /> */}
+        <label className="title-comment token comment">
+          /* Пометить для удаления*/&nbsp;
+          <input
+            type="checkbox"
+            {...getFieldProps('removed', {
+              onChange: this.onChange,
+              initialValue: scheme.removed,
+              valuePropName: 'checked',
+              rules: [],
+            })}
+          />
+        </label>
       </div>
     );
   }
@@ -296,11 +309,18 @@ class ControlPanel extends Component {
                   {showHistory ? 'History Hide' : 'History Show'}
                 </div>
               </div>
+              <div
+                className={cx(s.button, s.control, scheme.id ? '' : s.disabled)}
+                onClick={this.props.handler.removeScheme}
+              >
+                <div className={cx(s.buttonText)}>Remove</div>
+              </div>
             </div>
             <div className={s.groupButtonLabel}>Statements</div>
             <div className={s.groupButton}>
               {this.props.schemes.map(schem => (
                 <div
+                  key={schem.id}
                   className={cx(s.button, s.control, 'drag-me')}
                   id={schem.id}
                   onDoubleClick={this.openScheme(schem)}

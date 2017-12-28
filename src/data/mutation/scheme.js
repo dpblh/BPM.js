@@ -10,6 +10,7 @@ import {
   GraphQLList as ListType,
   GraphQLNonNull as NonNull,
   GraphQLString as StringType,
+  GraphQLBoolean as BooleanType,
 } from 'graphql';
 import _ from 'lodash';
 import SchemeType from '../types/SchemeType';
@@ -41,19 +42,23 @@ const scheme = {
     startNode: { type: new NonNull(StringType) },
     nodes: { type: new ListType(NodeInputType) },
     edges: { type: new ListType(EdgeInputType) },
+    removed: { type: BooleanType },
   },
-  async resolve(a, { id, name, desc, startNode, nodes, edges }) {
+  async resolve(a, { id, name, desc, startNode, nodes, edges, removed }) {
     try {
       // find or create
       const schema = await Scheme.findOne({ _id: id })
         // .then(s => new SchemeV(s).attrs())
         .then(async s => {
           const last = new SchemeV(s).attrs();
-          await Scheme.updateFromDTO({ id, name, desc, startNode }, last);
+          await Scheme.updateFromDTO(
+            { id, name, desc, startNode, removed },
+            last,
+          );
           return new SchemeV(s);
         })
         .catch(async () => {
-          await Scheme.createFromDTO({ id, name, desc, startNode });
+          await Scheme.createFromDTO({ id, name, desc, startNode, removed });
           return Scheme.findOne({ _id: id }).then(s => new SchemeV(s));
         });
 

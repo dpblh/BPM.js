@@ -46,6 +46,7 @@ async function action({ fetch }) {
             name,
             desc,
             startNode,
+            removed,
             graph{
               edges{
                 id,
@@ -75,15 +76,24 @@ async function action({ fetch }) {
     return data.scheme;
   };
 
-  const saveGraph = async ({ id, name, desc, startNode, nodes, edges }) => {
+  const saveGraph = async ({
+    id,
+    name,
+    desc,
+    startNode,
+    nodes,
+    edges,
+    removed,
+  }) => {
     const resp = await fetch('/graphql', {
       body: JSON.stringify({
-        query: `mutation($id: String!, $name: String!, $desc: String!, $startNode: String!, $nodes: [NodeInput], $edges: [EdgeInput]) {
-          scheme(id: $id, name: $name, desc: $desc, startNode: $startNode, nodes: $nodes, edges: $edges) {
+        query: `mutation($id: String!, $name: String!, $desc: String!, $startNode: String!, $nodes: [NodeInput], $edges: [EdgeInput], $removed: Boolean) {
+          scheme(id: $id, name: $name, desc: $desc, startNode: $startNode, nodes: $nodes, edges: $edges, removed: $removed) {
             id,
             name,
             desc,
             startNode,
+            removed,
             graph{
               edges{
                 id,
@@ -102,7 +112,7 @@ async function action({ fetch }) {
             }
           }
         }`,
-        variables: { id, name, desc, startNode, nodes, edges },
+        variables: { id, name, desc, startNode, nodes, edges, removed },
       }),
     });
     const { data } = await resp.json();

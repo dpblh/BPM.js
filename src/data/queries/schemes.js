@@ -14,7 +14,7 @@ import SchemeV from '../virtualizers/scheme';
 const scheme = {
   type: new ListType(SchemeType),
   async resolve({ request }) {
-    const schema = await Scheme.find({});
+    const schema = await Scheme.find({ removed: { $ne: true } });
     return schema.map(a => new SchemeV(a).attrs());
   },
 };

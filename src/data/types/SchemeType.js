@@ -12,6 +12,7 @@ import {
   GraphQLNonNull as NonNull,
   GraphQLObjectType as ObjectType,
   GraphQLString as StringType,
+  GraphQLBoolean as BooleanType,
 } from 'graphql';
 import GraphType from '../types/GraphType';
 import Scheme from '../models/Scheme';
@@ -23,6 +24,7 @@ const SchemeType = new ObjectType({
     name: { type: new NonNull(StringType) },
     desc: { type: new NonNull(StringType) },
     startNode: { type: StringType }, // todo if was updated at least one node | edge. Need to update startNode timestamp
+    removed: { type: BooleanType },
     graph: {
       type: GraphType,
       async resolve({ id }, _, a, { variableValues: { timestamp } }) {
