@@ -8,12 +8,6 @@ import s from './CodeFlask.css';
 
 class CodeFlask extends Component {
   state = {};
-  componentWillReceiveProps({ value }) {
-    // const { code } = this.state;
-    // console.log(code,value)
-    // console.log(code !== value)
-    this.flask.updateSilent(value);
-  }
   componentDidMount() {
     const { onChange, value, lang } = this.props;
     const flask = new Flask();
@@ -26,7 +20,9 @@ class CodeFlask extends Component {
       onChange && onChange(code);
       console.log(`User's input code: ${code}`);
     });
-    // Prism.highlightElement(this.el);
+  }
+  componentWillReceiveProps({ value }) {
+    this.flask.updateSilent(value);
   }
 
   render() {
@@ -37,16 +33,6 @@ class CodeFlask extends Component {
         className={s.languageSimple}
         ref={el => (this.el = el)}
       />
-      // <pre className={s.languageSimple}>
-      //   <code ref={el => (this.el = el)}>
-      //     {
-      //       `
-      //       if (a > 1) {
-      //         setScope(a, 1)
-      //       }`
-      //     }
-      //   </code>
-      // </pre>
     );
   }
 }

@@ -1,5 +1,5 @@
 /* eslint-disable no-constant-condition */
-import { take, put, call, fork, select, all } from 'redux-saga/effects';
+import { fork, all } from 'redux-saga/effects';
 import {
   watchLoadSchemes,
   watchLoadGraph,
@@ -7,6 +7,8 @@ import {
   watchToggleHistory,
   watchSaveGraph,
   watchLoadGraphByHistory,
+  watchRemoveNode,
+  watchRemoveEdge,
 } from '../routes/home/saga';
 
 export default function* root() {
@@ -17,5 +19,7 @@ export default function* root() {
     fork(watchToggleHistory),
     fork(watchSaveGraph),
     fork(watchLoadGraphByHistory),
+    fork(watchRemoveNode),
+    fork(watchRemoveEdge),
   ]);
 }

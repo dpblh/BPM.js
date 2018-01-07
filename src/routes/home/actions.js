@@ -1,6 +1,22 @@
 /* eslint-disable import/prefer-default-export */
 
-import { LOAD_GRAPH_BY_HISTORY, LOAD_SCHEMES, LOADED_SCHEMES, LOAD_GRAPH, SAVE_GRAPH, UPDATE_SCHEME, UPDATE_NODE, UPDATE_EDGE, SET_ORIGIN_SCHEME, LOAD_HISTORY, SET_EDITOR, TOGGLE_HISTORY, SHOW_HISTORY } from '../../constants';
+import {
+  LOAD_GRAPH_BY_HISTORY,
+  REMOVE_EDGE,
+  REMOVE_NODE,
+  LOAD_SCHEMES,
+  LOADED_SCHEMES,
+  LOAD_GRAPH,
+  SAVE_GRAPH,
+  UPDATE_SCHEME,
+  UPDATE_NODE,
+  UPDATE_EDGE,
+  SET_ORIGIN_SCHEME,
+  LOAD_HISTORY,
+  SET_EDITOR,
+  TOGGLE_HISTORY,
+  CLEAR_SCHEME,
+} from '../../constants';
 
 export function loadSchemes(fetch) {
   return {
@@ -58,13 +74,6 @@ export function toggleHistory(fetch) {
   };
 }
 
-export function showHistory(show) {
-  return {
-    type: SHOW_HISTORY,
-    payload: show,
-  };
-}
-
 export function setScheme(scheme) {
   return {
     type: UPDATE_SCHEME,
@@ -89,17 +98,34 @@ export function updateEdge(scheme) {
 export function loadByHistory(id, timestamp, fetch) {
   return {
     type: LOAD_GRAPH_BY_HISTORY,
-    payload: {id, timestamp, fetch},
+    payload: { id, timestamp, fetch },
   };
 }
 
-// export function setEditableNode(node) {
-//   return {
-//     type: SET_EDITABLE_NODE,
-//     payload: {
-//       model: node,
-//       tab: 3,
-//       showMenu: true,
-//     },
-//   };
-// }
+export function removeNode(id) {
+  return {
+    type: REMOVE_NODE,
+    payload: id,
+  };
+}
+
+export function removeEdge(id) {
+  return {
+    type: REMOVE_EDGE,
+    payload: id,
+  };
+}
+
+export function updateScheme(scheme) {
+  return {
+    type: UPDATE_SCHEME,
+    payload: scheme,
+  };
+}
+
+export function clearScheme(scheme) {
+  return {
+    type: CLEAR_SCHEME,
+    payload: scheme,
+  };
+}

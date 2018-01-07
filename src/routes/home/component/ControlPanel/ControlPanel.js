@@ -37,6 +37,7 @@ class ControlPanel extends Component {
   newScheme = () => {
     const { setCurrentScheme } = this.props;
     setCurrentScheme({
+      id: vis.util.randomUUID(),
       name: 'Новая схема',
       desc: '',
       graph: {
@@ -53,22 +54,27 @@ class ControlPanel extends Component {
     } = this.props;
     const { fetch } = this.context;
 
+    const updatedNodes = nodes.map(n => {
+      const { startNode, ...node } = n;
+      return node;
+    });
+
     saveGraph(
       {
-        startNode,
+        id,
         name,
         desc,
-        id,
-        nodes,
-        edges,
+        startNode,
         removed: true,
+        edges,
+        nodes: updatedNodes,
       },
       fetch,
     );
   };
 
   changeScheme = newScheme => {
-    const { updateScheme, setEditor} = this.props;
+    const { updateScheme, setEditor } = this.props;
     updateScheme(newScheme);
     setEditor({
       model: newScheme,
@@ -132,9 +138,13 @@ class ControlPanel extends Component {
   };
 
   dragHandler = (event, drag) => {
-    const { props: { schemes, updateNode } } = this;
+    const { props: { scheme, schemes, updateNode } } = this;
+    if (!scheme.id) {
+      console.log('Please select scheme');
+      return;
+    }
     const id = drag.attr('id');
-    const scheme = schemes.find(s => s.id === id);
+    const templateScheme = schemes.find(s => s.id === id);
     const {
       scale: { sx, sy },
       translate: { tx, ty },
@@ -146,12 +156,14 @@ class ControlPanel extends Component {
         x: (event.clientX - tx) / sx - 50,
         y: (event.clientY - ty) / sy - 50,
       },
-      name: scheme.name,
-      desc: scheme.desc,
-      scheme: scheme.id,
+      name: templateScheme.name,
+      desc: templateScheme.desc,
+      scheme: templateScheme.id,
       startNode: false,
     });
   };
+
+  optimizeScheme = () => {};
 
   render() {
     const {
@@ -167,6 +179,7 @@ class ControlPanel extends Component {
       toggleNav,
       toggleTab,
       dragHandler,
+      optimizeScheme,
       props: { editor: { tab, showMenu, model }, scheme, schemes, showHistory },
     } = this;
 
@@ -239,6 +252,12 @@ class ControlPanel extends Component {
                   onClick={removeScheme}
                 >
                   <div className={cx(s.buttonText)}>Remove</div>
+                </div>
+                <div
+                  className={cx(controlClass, scheme.id ? '' : s.disabled)}
+                  onClick={optimizeScheme}
+                >
+                  <div className={cx(s.buttonText)}>Optimize</div>
                 </div>
               </div>
               <div className={s.groupButtonLabel}>Statements</div>

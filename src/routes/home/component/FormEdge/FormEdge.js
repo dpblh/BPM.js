@@ -6,10 +6,10 @@ import CodeFlask from '../CodeFlask';
 class FormEdge extends Component {
   componentWillReceiveProps({ model, form: { setFieldsValue } }) {
     if (model.condition !== this.props.model.condition) {
-      setFieldsValue({condition: model.condition})
+      setFieldsValue({ condition: model.condition });
     }
     if (model.roles !== this.props.model.roles) {
-      setFieldsValue({roles: model.roles})
+      setFieldsValue({ roles: model.roles });
     }
   }
 
@@ -18,7 +18,7 @@ class FormEdge extends Component {
 
     setTimeout(() => {
       validateFields((error, values) => {
-        onChange({ ...model, ...values});
+        onChange({ ...model, ...values });
       });
     });
   };

@@ -12,8 +12,8 @@ import {
   updateNode,
   updateEdge,
   loadByHistory,
-  // setEditableEdge,
-  // setEditableNode,
+  removeNode,
+  removeEdge,
 } from './actions';
 
 function mapStateToProps(state) {
@@ -34,8 +34,8 @@ const mapDispatchToProps = {
   updateNode,
   updateEdge,
   loadByHistory,
-  // setEditableEdge,
-  // setEditableNode,
+  removeNode,
+  removeEdge,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(Home);

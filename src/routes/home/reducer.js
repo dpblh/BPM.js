@@ -9,13 +9,13 @@ import {
   SET_TIMESTAMP,
   SHOW_HISTORY,
   CLEAR_SCHEME,
+  UPDATE_EDGE,
 } from '../../constants';
-import { UPDATE_EDGE } from '../../constants/index';
 
 const initializeState = {
   schemes: [],
   scheme: {
-    name: 'Новая схема',
+    name: '',
     desc: '',
     graph: {
       nodes: [],
@@ -23,7 +23,7 @@ const initializeState = {
     },
   },
   originScheme: {
-    name: 'Новая схема',
+    name: '',
     desc: '',
     graph: {
       nodes: [],
@@ -63,10 +63,16 @@ export default function runtime(state = initializeState, action) {
     case CLEAR_SCHEME:
       return {
         ...state,
+        timestamp: null,
         scheme: _.cloneDeep(state.originScheme),
       };
     case UPDATE_SCHEME:
-      if (action.payload.graph && action.payload.graph.nodes) {
+      // todo need add normalizer
+      if (
+        action.payload.graph &&
+        action.payload.graph.nodes &&
+        action.payload.startNode
+      ) {
         action.payload.graph.nodes.forEach(
           n => (n.startNode = n.id === action.payload.startNode),
         );

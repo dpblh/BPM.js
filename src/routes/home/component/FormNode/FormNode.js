@@ -3,28 +3,33 @@ import PropTypes from 'prop-types';
 import { createForm } from 'rc-form';
 import CodeFlask from '../CodeFlask';
 
-class FormScheme extends Component {
-  componentWillReceiveProps({ model, form: { setFieldsValue } }) {
-    // if (model !== this.props.model) {
-    //   setFieldsValue(model);
-    // }
+class FormNode extends Component {
+  componentWillReceiveProps({ model, form: { setFieldsValue, setFields } }) {
     if (model.name !== this.props.model.name) {
-      setFieldsValue({name: model.name})
+      setFieldsValue({ name: model.name });
     }
     if (model.desc !== this.props.model.desc) {
-      setFieldsValue({desc: model.desc})
+      setFieldsValue({ desc: model.desc });
     }
-    if (model.removed !== this.props.model.removed) {
-      setFieldsValue({removed: model.removed})
+    if (model.startNode !== this.props.model.startNode) {
+      setFieldsValue({ startNode: model.startNode });
     }
   }
-
+  onChangeStart = event => {
+    if (event.target.checked === false) {
+      event.target.checked = true;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    this.onChange(event);
+  };
   onChange = () => {
     const { form: { validateFields }, onChange, model } = this.props;
 
     setTimeout(() => {
       validateFields((error, values) => {
-        onChange({ ...model, ...values});
+        onChange({ ...model, ...values });
       });
     });
   };
@@ -38,7 +43,7 @@ class FormScheme extends Component {
           {...{ lang: 'planeText', minHeight: 100 }}
           {...getFieldProps('name', {
             onChange: this.onChange,
-            initialValue: model.name,
+            initialValue: model.name || '',
             rules: [],
           })}
         />
@@ -47,17 +52,17 @@ class FormScheme extends Component {
           {...{ lang: 'planeText', minHeight: 200 }}
           {...getFieldProps('desc', {
             onChange: this.onChange,
-            initialValue: model.desc,
+            initialValue: model.desc || '',
             rules: [],
           })}
         />
         <label className="title-comment token comment">
-          /* Пометить для удаления*/&nbsp;
+          /*Стартовый узел*/&nbsp;
           <input
             type="checkbox"
-            {...getFieldProps('removed', {
-              onChange: this.onChange,
-              initialValue: model.removed,
+            {...getFieldProps('startNode', {
+              onChange: this.onChangeStart,
+              initialValue: model.startNode || false,
               valuePropName: 'checked',
               rules: [],
             })}
@@ -68,7 +73,7 @@ class FormScheme extends Component {
   }
 }
 
-FormScheme.propTypes = {
+FormNode.propTypes = {
   form: PropTypes.shape({
     validateFields: PropTypes.func.isRequired,
     setFieldsValue: PropTypes.func.isRequired,
@@ -77,4 +82,4 @@ FormScheme.propTypes = {
   onChange: PropTypes.func.isRequired,
 };
 
-export default createForm()(FormScheme);
+export default createForm()(FormNode);

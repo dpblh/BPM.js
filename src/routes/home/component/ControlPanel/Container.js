@@ -10,7 +10,7 @@ import {
   updateNode,
   updateEdge,
   clearScheme,
-} from './actions';
+} from '../../actions';
 
 function mapStateToProps(state) {
   return {

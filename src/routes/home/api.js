@@ -95,7 +95,7 @@ export const saveGraph = async (fetch, variables) => {
   return data.scheme;
 };
 
-export const loadSchemes = fetch => async () => {
+export const loadSchemes = async fetch => {
   const resp = await fetch('/graphql', {
     body: JSON.stringify({
       query: `{
@@ -109,14 +109,10 @@ export const loadSchemes = fetch => async () => {
     }),
   });
   const { data } = await resp.json();
-  if (!data || !data.schemes)
-    throw new Error('Failed to load the news feed.');
+  if (!data || !data.schemes) throw new Error('Failed to load the news feed.');
   return data.schemes;
 };
 
 export default fetch => ({
-  // loadGraph: loadGraph(fetch),
-  // loadHistory: loadHistory(fetch),
-  loadSchemes: loadSchemes(fetch),
-  // saveGraph: saveGraph(fetch),
+  loadSchemes: () => loadSchemes(fetch),
 });
