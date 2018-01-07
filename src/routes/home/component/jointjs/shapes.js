@@ -169,7 +169,7 @@ joint.shapes.tm.StartProcess = joint.shapes.tm.Process.extend({
 
 joint.shapes.tm.ProcessView = joint.shapes.tm.ToolElementView;
 
-joint.shapes.tm.MyPaperFactory = ({ el }) => {
+joint.shapes.tm.MyPaperFactory = ({ el, changeTarget, changeSource }) => {
   const graph = new joint.dia.Graph();
 
   const paper = new joint.dia.Paper({
@@ -183,9 +183,11 @@ joint.shapes.tm.MyPaperFactory = ({ el }) => {
     // disconnectLinks: true,
     defaultLink: () =>
       joint.shapes.tm.MyLinkFactory({
-        data: { hock: true },
+        data: {},
+        origin_data: { hock: true },
+        changeTarget,
+        changeSource,
         graph,
-        newLink: true,
       }),
     model: graph,
     validateConnection(
@@ -310,8 +312,10 @@ cell.on('change:attrs', (element, { data, origin_data }) => {
 joint.shapes.tm.MyStateFactory = ({
   graph,
   data,
-  newState = false,
+                                    origin_data,
+  // newState = false,
   data: { id, name, position: { x, y }, startNode },
+                                    updatePosition,
 }) => {
   const startAttrs = {
     rotatable: { class: 'rotatable cccc start-node' },
@@ -341,6 +345,7 @@ joint.shapes.tm.MyStateFactory = ({
     el.prop('size', otherAttrs.size);
   };
 
+  const color = _.isEqual(data, origin_data) ? 'black' : 'red';
   const cell = new joint.shapes.tm.Process({
     id,
     position: { x, y },
@@ -352,15 +357,25 @@ joint.shapes.tm.MyStateFactory = ({
       '.element-process-2': startNode
         ? startAttrs.elementProcess2
         : otherAttrs.elementProcess2,
-      text: { text: name, stroke: newState ? 'red' : 'black' },
+      text: { text: name, stroke: color },
       data,
-      origin_data: newState ? {} : Object.assign({}, data),
+      origin_data,
     },
     size: startNode ? startAttrs.size : otherAttrs.size,
   });
   let timeout;
+  cell.on('change:position', (element, position) => {
+    setTimeout(() => {
+      cell.attr('data/position', position);
+      updatePosition(cell.id, position);
+    }, 100);
+  });
   cell.on('change:attrs', (element, { data, origin_data }) => {
-    const color = _.isEqual(data, origin_data) ? 'black' : 'red';
+    // console.log('==========')
+    // console.log(JSON.stringify(data), JSON.stringify(origin_data))
+    // console.log('==========')
+    let color = _.isEqual(data, origin_data) ? 'black' : 'red';
+    console.log(color)
     clearTimeout(timeout);
     timeout = setTimeout(() => {
       if (data.startNode) {
@@ -372,8 +387,10 @@ joint.shapes.tm.MyStateFactory = ({
       } else {
         makeOther(cell);
       }
+      // console.log(data)
       cell.attr('text/stroke', color);
       cell.attr('text/text', data.name);
+      cell.prop('position', data.position);
     }, 100);
   });
   graph.addCell(cell);
@@ -406,35 +423,46 @@ joint.shapes.tm.MyStateFactory = ({
 joint.shapes.tm.MyLinkFactory = ({
   data,
   data: { id, source, target, name },
-  newLink = false,
+  origin_data,
+  changeTarget,
+  changeSource,
   graph,
 }) => {
+  console.log('changeTarget', changeTarget)
+  const color = _.isEqual(data, origin_data) ? 'black' : 'red';
   const cell = new joint.shapes.MyLink({
     id,
     source: { id: source },
     target: { id: target },
     labels: [{ attrs: { text: { text: name } } }],
     attrs: {
-      '.connection': { stroke: newLink ? 'red' : 'black' },
+      '.connection': { stroke: color },
       data,
-      origin_data: newLink ? {} : Object.assign({}, data),
+      origin_data,
     },
   });
   let timeout;
   cell.on('change:target', cell => {
     const target = cell.get('target').id;
-    if (target) {
-      cell.attr('data/target', target);
+    const source = cell.get('source').id;
+    if (target && source) {
+      console.log(cell.id)
+      changeTarget(cell.id, target, source);
+      // cell.attr('data/target', target);
     }
   });
   cell.on('change:source', cell => {
+    const target = cell.get('target').id;
     const source = cell.get('source').id;
-    if (source) {
-      cell.attr('data/source', source);
+    if (target && source) {
+      console.log(cell.id)
+      changeTarget(cell.id, target, source);
+      // cell.attr('data/target', target);
     }
   });
   cell.on('change:attrs', (element, { data, origin_data }) => {
-    const color = _.isEqual(data, origin_data) ? 'black' : 'red';
+    console.log(222222)
+    let color = _.isEqual(data, origin_data) ? 'black' : 'red';
     clearTimeout(timeout);
     timeout = setTimeout(() => {
       cell.attr('.connection/stroke', color);

@@ -1,0 +1,6 @@
+{
+  "name": "FormEdge",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./FormEdge.js"
+}

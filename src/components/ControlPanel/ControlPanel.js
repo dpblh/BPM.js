@@ -1,359 +1,305 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import vis from 'vis';
 import withStyles from 'isomorphic-style-loader/lib/withStyles';
 import cx from 'classnames';
+import FormNode from '../FormNode';
+import FormEdge from '../FormEdge';
+import FormScheme from '../FormScheme';
+import DraggableButton from '../DraggableButton';
 import s from './ControlPanel.css';
-import CodeFlask from '../CodeFlask';
-import { createForm } from 'rc-form';
-
-class SchemeForm extends Component {
-  onChange = () => {
-    const {
-      form: { validateFields },
-      scheme: { id },
-      changeScheme,
-    } = this.props;
-
-    setTimeout(() => {
-      validateFields((error, { name, desc, removed }) => {
-        changeScheme({ name, desc, id, removed });
-      });
-    });
-  };
-
-  componentWillReceiveProps({ scheme, form: { setFieldsValue } }) {
-    if (scheme !== this.props.scheme) {
-      setFieldsValue({
-        name: scheme.name,
-        desc: scheme.desc,
-        removed: scheme.removed,
-      });
-    }
-  }
-
-  render() {
-    const { form: { getFieldProps }, scheme } = this.props;
-    return (
-      <div>
-        <div className="title-comment token comment">/*Название*/</div>
-        <CodeFlask
-          {...{ lang: 'planeText', minHeight: 100 }}
-          {...getFieldProps('name', {
-            onChange: this.onChange,
-            initialValue: scheme.name,
-            rules: [],
-          })}
-        />
-        {/* <input */}
-        {/* {...getFieldProps('name', { */}
-        {/* onChange: this.onChange, */}
-        {/* initialValue: scheme.name, */}
-        {/* rules: [{ required: true }], */}
-        {/* })} */}
-        {/* /> */}
-        <div className="title-comment token comment">/*Описание*/</div>
-        <CodeFlask
-          {...{ lang: 'planeText', minHeight: 200 }}
-          {...getFieldProps('desc', {
-            onChange: this.onChange,
-            initialValue: scheme.desc,
-            rules: [],
-          })}
-        />
-        {/* <input */}
-        {/* {...getFieldProps('desc', { */}
-        {/* onChange: this.onChange, */}
-        {/* initialValue: scheme.desc, */}
-        {/* rules: [{ required: true }], */}
-        {/* })} */}
-        {/* /> */}
-        <label className="title-comment token comment">
-          /* Пометить для удаления*/&nbsp;
-          <input
-            type="checkbox"
-            {...getFieldProps('removed', {
-              onChange: this.onChange,
-              initialValue: scheme.removed,
-              valuePropName: 'checked',
-              rules: [],
-            })}
-          />
-        </label>
-      </div>
-    );
-  }
-}
-
-const SchemeForms = createForm()(SchemeForm);
-
-class NodeForm extends Component {
-  onChangeStart = event => {
-    if (event.target.checked === false) {
-      event.target.checked = true;
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
-    this.onChange(event);
-  };
-  onChange = () => {
-    const { form: { validateFields }, node } = this.props;
-
-    setTimeout(() => {
-      validateFields((error, { name, desc, startNode }) => {
-        node.attr('data/name', name);
-        node.attr('data/desc', desc);
-        node.attr('data/startNode', startNode);
-      });
-    });
-  };
-
-  componentWillReceiveProps({ node, form: { setFieldsValue } }) {
-    if (node !== this.props.node) {
-      setFieldsValue({
-        name: node.attr('data/name') || '',
-        desc: node.attr('data/desc') || '',
-        startNode: node.attr('data/startNode'),
-      });
-    }
-  }
-
-  render() {
-    const { form: { getFieldProps }, node } = this.props;
-    return (
-      <div>
-        <div className="title-comment token comment">/*Название*/</div>
-        <CodeFlask
-          {...{ lang: 'planeText', minHeight: 100 }}
-          {...getFieldProps('name', {
-            onChange: this.onChange,
-            initialValue: node.attr('data/name') || '',
-            rules: [],
-          })}
-        />
-        {/* <input */}
-        {/* {...getFieldProps('name', { */}
-        {/* onChange: this.onChange, */}
-        {/* initialValue: node.attr('data/name') || '', */}
-        {/* rules: [{ required: true }], */}
-        {/* })} */}
-        {/* /> */}
-        <div className="title-comment token comment">/*Описание*/</div>
-        <CodeFlask
-          {...{ lang: 'planeText', minHeight: 200 }}
-          {...getFieldProps('desc', {
-            onChange: this.onChange,
-            initialValue: node.attr('data/desc') || '',
-            rules: [],
-          })}
-        />
-        {/* <input */}
-        {/* {...getFieldProps('desc', { */}
-        {/* onChange: this.onChange, */}
-        {/* initialValue: node.attr('data/desc') || '', */}
-        {/* rules: [{ required: true }], */}
-        {/* })} */}
-        {/* /> */}
-        <label className="title-comment token comment">
-          /*Стартовый узел*/&nbsp;
-          <input
-            type="checkbox"
-            {...getFieldProps('startNode', {
-              onChange: this.onChangeStart,
-              initialValue: node.attr('data/startNode'),
-              valuePropName: 'checked',
-              rules: [],
-            })}
-          />
-        </label>
-      </div>
-    );
-  }
-}
-
-const NodeForms = createForm()(NodeForm);
-
-class EdgeForm extends Component {
-  onChange = () => {
-    const { form: { validateFields }, link } = this.props;
-
-    setTimeout(() => {
-      validateFields((error, { roles, condition }) => {
-        link.attr('data/roles', roles);
-        link.attr('data/condition', condition);
-      });
-    });
-  };
-
-  componentWillReceiveProps({ link, form: { setFieldsValue } }) {
-    if (link !== this.props.link) {
-      setFieldsValue({
-        roles: link.attr('data/roles') || '',
-        condition: link.attr('data/condition') || '',
-      });
-    }
-  }
-
-  render() {
-    const { form: { getFieldProps }, link } = this.props;
-    return (
-      <div>
-        <div className="title-comment token comment">/*Условие перехода*/</div>
-        <CodeFlask
-          {...{ lang: 'condition', minHeight: 100 }}
-          {...getFieldProps('condition', {
-            onChange: this.onChange,
-            initialValue: link.attr('data/condition') || '',
-            rules: [],
-          })}
-        />
-        <div className="title-comment token comment">/*Правила*/</div>
-        <CodeFlask
-          {...{ lang: 'roles', minHeight: 200 }}
-          {...getFieldProps('roles', {
-            onChange: this.onChange,
-            initialValue: link.attr('data/roles') || '',
-            rules: [],
-          })}
-        />
-      </div>
-    );
-  }
-}
-
-const EdgeForms = createForm()(EdgeForm);
 
 class ControlPanel extends Component {
-  toggleNav = () => this.props.handler.toggleMenu();
+  toggleNav = () => {
+    const { setEditor, editor: { showMenu } } = this.props;
+    setEditor({
+      showMenu: !showMenu,
+    });
+  };
 
-  toggleTab = index => () => this.props.handler.toggleTab(index);
+  toggleTab = tab => () => {
+    const { setEditor } = this.props;
+    setEditor({
+      tab,
+    });
+  };
 
-  openScheme = scheme => () => this.props.handler.openScheme(scheme);
+  openScheme = schemeNone => () => {
+    if (schemeNone.startNode.length) {
+      const timestamp = Date.now();
+      const { loadGraph } = this.props;
+      const { fetch } = this.context;
+
+      loadGraph(schemeNone.id, timestamp, fetch);
+    }
+  };
+
+  newScheme = () => {
+    const { setCurrentScheme } = this.props;
+    setCurrentScheme({
+      name: 'Новая схема',
+      desc: '',
+      graph: {
+        nodes: [],
+        edges: [],
+      },
+    });
+  };
+
+  removeScheme = async () => {
+    const {
+      saveGraph,
+      originScheme: { graph: { nodes, edges }, startNode, name, desc, id },
+    } = this.props;
+    const { fetch } = this.context;
+
+    saveGraph(
+      {
+        startNode,
+        name,
+        desc,
+        id,
+        nodes,
+        edges,
+        removed: true,
+      },
+      fetch,
+    );
+  };
+
+  changeScheme = newScheme => {
+    const { updateScheme, setEditor} = this.props;
+    updateScheme(newScheme);
+    setEditor({
+      model: newScheme,
+    });
+  };
+
+  changeNode = newNode => {
+    const { updateNode, setEditor } = this.props;
+    updateNode(newNode);
+    setEditor({
+      model: newNode,
+    });
+  };
+
+  changeEdge = newEdge => {
+    const { updateEdge, setEditor } = this.props;
+    updateEdge(newEdge);
+    setEditor({
+      model: newEdge,
+    });
+  };
+
+  showHistoryHandler = async () => {
+    const { fetch } = this.context;
+    const { toggleHistory } = this.props;
+    toggleHistory(fetch);
+  };
+
+  schemeClear = () => {
+    const { clearScheme } = this.props;
+    clearScheme();
+  };
+  saveScheme = () => {
+    const {
+      saveGraph,
+      scheme: { id, name, desc, removed, graph: { edges, nodes } },
+    } = this.props;
+    const { fetch } = this.context;
+
+    const startNodeModel = nodes.find(n => n.startNode);
+    if (!startNodeModel) return console.log('startNode not specific');
+    const startNode = startNodeModel.id;
+
+    const updatedNodes = nodes.map(n => {
+      const { startNode, ...node } = n;
+      return node;
+    });
+
+    saveGraph(
+      {
+        id,
+        name,
+        desc,
+        startNode,
+        removed,
+        edges,
+        nodes: updatedNodes,
+      },
+      fetch,
+    );
+  };
+
+  dragHandler = (event, drag) => {
+    const { props: { schemes, updateNode } } = this;
+    const id = drag.attr('id');
+    const scheme = schemes.find(s => s.id === id);
+    const {
+      scale: { sx, sy },
+      translate: { tx, ty },
+    } = this.props.paperProps();
+
+    updateNode({
+      id: vis.util.randomUUID(),
+      position: {
+        x: (event.clientX - tx) / sx - 50,
+        y: (event.clientY - ty) / sy - 50,
+      },
+      name: scheme.name,
+      desc: scheme.desc,
+      scheme: scheme.id,
+      startNode: false,
+    });
+  };
 
   render() {
     const {
-      node,
-      link,
-      scheme,
-      showMenu,
-      handler: { changeScheme },
-      showHistory,
-    } = this.props;
-    console.log(scheme);
+      newScheme,
+      removeScheme,
+      schemeClear,
+      saveScheme,
+      changeScheme,
+      changeNode,
+      changeEdge,
+      showHistoryHandler,
+      openScheme,
+      toggleNav,
+      toggleTab,
+      dragHandler,
+      props: { editor: { tab, showMenu, model }, scheme, schemes, showHistory },
+    } = this;
+
+    const toggleClass = cx({
+      [s.button]: true,
+      [s.toggle]: true,
+      [s.show]: showMenu,
+    });
+
+    const contentClass = cx({
+      [s.navContent]: true,
+      [s.show]: showMenu,
+    });
+
+    const controlClass = cx(s.button, s.control);
+
     return (
       <div className={s.root}>
-        <div
-          className={cx({
-            [s.button]: true,
-            [s.toggle]: true,
-            [s.show]: showMenu,
-          })}
-          onClick={this.toggleNav}
-        >
+        <div className={toggleClass} onClick={toggleNav}>
           <div className={s.buttonText}>x</div>
         </div>
-        <div
-          className={cx({
-            [s.navContent]: true,
-            [s.show]: showMenu,
-          })}
-        >
+        <div className={contentClass}>
           <div className={s.tabs}>
             <div
-              className={cx(s.button, this.props.tab === 0 ? s.activeTab : '')}
-              onClick={this.toggleTab(0)}
+              className={cx(s.button, tab === 'helper' ? s.activeTab : '')}
+              onClick={toggleTab('helper')}
             >
               <div className={s.buttonText}>Подсказки</div>
             </div>
             <div
-              className={cx(s.button, this.props.tab === 1 ? s.activeTab : '')}
-              onClick={this.toggleTab(1)}
+              className={cx(s.button, tab === 'navigation' ? s.activeTab : '')}
+              onClick={toggleTab('navigation')}
             >
               <div className={s.buttonText}>Управление</div>
             </div>
           </div>
 
-          <div
-            className={cx(s.content, this.props.tab === 0 ? s.showContent : '')}
-          >
-            1
-          </div>
-          <div
-            className={cx(s.content, this.props.tab === 1 ? s.showContent : '')}
-          >
-            <div className={s.groupButton}>
-              <div
-                className={cx(s.button, s.control, scheme.id ? '' : s.disabled)}
-                onClick={this.props.handler.saveSheme}
-              >
-                <div className={cx(s.buttonText)}>Save</div>
-              </div>
-              <div
-                className={cx(s.button, s.control, scheme.id ? '' : s.disabled)}
-                onClick={this.props.handler.schemeClear}
-              >
-                <div className={cx(s.buttonText)}>Clear</div>
-              </div>
-              <div className={cx(s.button, s.control)}>
+          {tab === 'helper' && <div className={s.content}>1</div>}
+
+          {tab === 'navigation' && (
+            <div className={s.content}>
+              <div className={s.groupButton}>
                 <div
-                  className={s.buttonText}
-                  onClick={this.props.handler.newScheme}
+                  className={cx(controlClass, scheme.id ? '' : s.disabled)}
+                  onClick={saveScheme}
                 >
-                  New
+                  <div className={cx(s.buttonText)}>Save</div>
+                </div>
+                <div
+                  className={cx(controlClass, scheme.id ? '' : s.disabled)}
+                  onClick={schemeClear}
+                >
+                  <div className={cx(s.buttonText)}>Clear</div>
+                </div>
+                <div className={controlClass}>
+                  <div className={s.buttonText} onClick={newScheme}>
+                    New
+                  </div>
+                </div>
+                <div
+                  className={cx(controlClass, scheme.id ? '' : s.disabled)}
+                  onClick={showHistoryHandler}
+                >
+                  <div className={cx(s.buttonText)}>
+                    {showHistory ? 'History Hide' : 'History Show'}
+                  </div>
+                </div>
+                <div
+                  className={cx(controlClass, scheme.id ? '' : s.disabled)}
+                  onClick={removeScheme}
+                >
+                  <div className={cx(s.buttonText)}>Remove</div>
                 </div>
               </div>
-              <div
-                className={cx(s.button, s.control, scheme.id ? '' : s.disabled)}
-                onClick={this.props.handler.showHistoryHandler}
-              >
-                <div className={cx(s.buttonText)}>
-                  {showHistory ? 'History Hide' : 'History Show'}
-                </div>
-              </div>
-              <div
-                className={cx(s.button, s.control, scheme.id ? '' : s.disabled)}
-                onClick={this.props.handler.removeScheme}
-              >
-                <div className={cx(s.buttonText)}>Remove</div>
+              <div className={s.groupButtonLabel}>Statements</div>
+              <div className={s.groupButton}>
+                {schemes.map(sch => (
+                  <DraggableButton
+                    key={sch.id}
+                    callback={dragHandler}
+                    className={cx(controlClass, 'drag-me')}
+                    id={sch.id}
+                    onDoubleClick={openScheme(sch)}
+                  >
+                    <div className={s.buttonText}>{sch.name}</div>
+                  </DraggableButton>
+                ))}
               </div>
             </div>
-            <div className={s.groupButtonLabel}>Statements</div>
-            <div className={s.groupButton}>
-              {this.props.schemes.map(schem => (
-                <div
-                  key={schem.id}
-                  className={cx(s.button, s.control, 'drag-me')}
-                  id={schem.id}
-                  onDoubleClick={this.openScheme(schem)}
-                >
-                  <div className={s.buttonText}>{schem.name}</div>
-                </div>
-              ))}
+          )}
+
+          {tab === 'node' && (
+            <div className={s.content}>
+              <FormNode {...{ model, onChange: changeNode }} />
             </div>
-          </div>
+          )}
 
-          <div
-            className={cx(s.content, this.props.tab === 2 ? s.showContent : '')}
-          >
-            {node && <NodeForms {...{ node, scheme }} />}
-            {/* {JSON.stringify(this.props.node)} */}
-          </div>
-          <div
-            className={cx(s.content, this.props.tab === 3 ? s.showContent : '')}
-          >
-            {link && <EdgeForms {...{ link }} />}
-            {/* {JSON.stringify(this.props.link)} */}
-          </div>
+          {tab === 'edge' && (
+            <div className={s.content}>
+              <FormEdge {...{ model, onChange: changeEdge }} />
+            </div>
+          )}
 
-          <div
-            className={cx(s.content, this.props.tab === 4 ? s.showContent : '')}
-          >
-            {scheme && <SchemeForms {...{ scheme, changeScheme }} />}
-            {/* {JSON.stringify(this.props.link)} */}
-          </div>
+          {tab === 'scheme' && (
+            <div className={s.content}>
+              <FormScheme {...{ model, onChange: changeScheme }} />
+            </div>
+          )}
         </div>
       </div>
     );
   }
 }
+
+ControlPanel.contextTypes = {
+  fetch: PropTypes.func,
+};
+
+ControlPanel.propTypes = {
+  setEditor: PropTypes.func.isRequired,
+  loadGraph: PropTypes.func.isRequired,
+  saveGraph: PropTypes.func.isRequired,
+  setCurrentScheme: PropTypes.func.isRequired,
+  updateScheme: PropTypes.func.isRequired,
+  updateNode: PropTypes.func.isRequired,
+  updateEdge: PropTypes.func.isRequired,
+  clearScheme: PropTypes.func.isRequired,
+  paperProps: PropTypes.func.isRequired,
+  originScheme: PropTypes.object.isRequired,
+  scheme: PropTypes.object.isRequired,
+  editor: PropTypes.object.isRequired,
+  schemes: PropTypes.arrayOf(PropTypes.object).isRequired,
+  showHistory: PropTypes.bool.isRequired,
+};
 
 export default withStyles(s)(ControlPanel);

@@ -6,8 +6,6 @@
 
 .button {
   user-select: none;
-
-  /*float:right;*/
   margin: 0;
   border: 0;
   font-weight: normal;
@@ -139,8 +137,6 @@
 .navContent .tabs .button {
   float: left;
   width: 200px;
-
-  /*background-color: white;*/
 }
 
 .navContent .tabs .button:hover {
@@ -167,16 +163,16 @@
 }
 
 .content {
-  display: none;
-
+  /*display: none;*/
+  display: inline-block;
   /*overflow: auto;*/
   width: 100%;
 }
 
-.content.showContent {
-  display: inline-block;
-  overflow: auto;
-}
+/*.content.showContent {*/
+  /*display: inline-block;*/
+  /*overflow: auto;*/
+/*}*/
 
 
 .button.control {

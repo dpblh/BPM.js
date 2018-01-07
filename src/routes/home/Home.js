@@ -8,13 +8,13 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import 'moment/locale/ru';
 import vis from 'vis';
 import visCss from 'vis/dist/vis.css';
 import cx from 'classnames';
 import withStyles from 'isomorphic-style-loader/lib/withStyles';
 import ControlPanel from '../../components/ControlPanel';
-import dragDropCss from './component/dragDrop/dragDrop.css';
 import jointjsCss from './component/jointjs/jointjs.css';
 import joint from './component/jointjs';
 import shapesCss from './component/jointjs/shapes.css';
@@ -22,74 +22,100 @@ import shapesCss from './component/jointjs/shapes.css';
 import $ from './component/jquery';
 import s from './Home.css';
 
-class Home extends React.Component {
-  state = {
-    tab: 1,
-    scheme: {},
-    originScheme: {},
-  };
-  componentDidMount() {
-    const groups = new vis.DataSet([
-      {
-        id: 'name',
-        content: 'Name',
-      },
-      {
-        id: 'desc',
-        content: 'Desc',
-      },
-      {
-        id: 'startNode',
-        content: 'StartNode',
-      },
-    ]);
-    const items = [
-      { id: 1, group: 'name', content: 'item 1', start: '2013-04-20' },
-      { id: 2, group: 'desc', content: 'item 2', start: '2013-04-14' },
-      { id: 3, group: 'startNode', content: 'item 3', start: '2013-04-14' },
-    ];
+const groupsA = [
+  { id: 'name', content: 'Name' },
+  { id: 'desc', content: 'Desc' },
+  { id: 'startNode', content: 'StartNode' },
+];
 
-    const options = {
-      autoResize: true,
-      width: '100%',
-      zoomMin: 1000,
-      zoomMax: 1000 * 60 * 60 * 24 * 30 * 12,
-      height: '100%',
-      margin: {
-        item: 20,
-      },
-      locales: {
-        // create a new locale (text strings should be replaced with localized strings)
-        ru: {
-          current: 'Текущий',
-          time: 'Время',
-        },
-      },
-      locale: 'ru',
-    };
-    this.dataSet = new vis.DataSet(items);
-    this.timelineE = new vis.Timeline(this.timeline);
-    this.timelineE.setOptions(options);
-    this.timelineE.setGroups(groups);
-    this.timelineE.setItems(this.dataSet);
+const itemsA = [
+  { id: 1, group: 'name', content: 'name', start: Date.now() },
+  { id: 2, group: 'desc', content: 'desc', start: Date.now() },
+  { id: 3, group: 'startNode', content: 'startNode', start: Date.now() },
+];
+
+const timeLineOptions = {
+  autoResize: true,
+  width: '100%',
+  zoomMin: 1000,
+  zoomMax: 1000 * 60 * 60 * 24 * 30 * 12,
+  height: '100%',
+  margin: {
+    item: 20,
+  },
+  locales: {
+    ru: {
+      current: 'Текущий',
+      time: 'Время',
+    },
+  },
+  locale: 'ru',
+};
+
+class Home extends React.Component {
+  // state = {
+  //   tab: 1,
+  //   scheme: {},
+  //   originScheme: {},
+  // };
+  componentDidMount() {
+    const groups = new vis.DataSet([...groupsA]);
+    const items = new vis.DataSet([...itemsA]);
+
+    // const options = {
+    //   autoResize: true,
+    //   width: '100%',
+    //   zoomMin: 1000,
+    //   zoomMax: 1000 * 60 * 60 * 24 * 30 * 12,
+    //   height: '100%',
+    //   margin: {
+    //     item: 20,
+    //   },
+    //   locales: {
+    //     ru: {
+    //       current: 'Текущий',
+    //       time: 'Время',
+    //     },
+    //   },
+    //   locale: 'ru',
+    // };
+    this.dataSet = items;
+    this.timeline = new vis.Timeline(this.tEl);
+    this.timeline.setOptions(timeLineOptions);
+    this.timeline.setData({
+      groups,
+      items,
+    });
+    const { changeTarget, updatePosition } = this;
+    // this.timeline.setGroups(groups);
+    // this.timeline.setItems(items);
 
     const paper = joint.shapes.tm.MyPaperFactory({
       el: $(this.container),
+      changeTarget,
     });
-    const graph = (this.graph = paper.model);
-    const state = joint.shapes.tm.MyStateFactory;
-    const link = joint.shapes.tm.MyLinkFactory;
+    this.paper = paper;
+    this.graph = paper.model;
+    // graph = this.graph;
+    // const state = joint.shapes.tm.MyStateFactory;
+    // const link = joint.shapes.tm.MyLinkFactory;
 
     paper.on('link:remove', linkView => {
       linkView.model.remove();
     });
 
     paper.on('link:options', linkView => {
-      this.setState({
-        link: linkView.model,
-        tab: 3,
+      const { setEditor } = this.props;
+      setEditor({
+        model: linkView.model.attr('data'),
+        tab: 'edge',
         showMenu: true,
       });
+      // this.setState({
+      //   link: linkView.model,
+      //   tab: 3,
+      //   showMenu: true,
+      // });
     });
 
     paper.on('node:remove', linkView => {
@@ -97,184 +123,357 @@ class Home extends React.Component {
     });
 
     paper.on('node:options', linkView => {
-      this.setState({
-        node: linkView.model,
-        tab: 2,
+      const { setEditor } = this.props;
+      setEditor({
+        model: linkView.model.attr('data'),
+        tab: 'node',
         showMenu: true,
       });
+      // this.setState({
+      //   node: linkView.model,
+      //   tab: 2,
+      //   showMenu: true,
+      // });
     });
 
-    $('.drag-me').dragged((event, drag) => {
-      const { originScheme } = this.state;
-      if (!originScheme.id) return console.log("scheme isn't exists");
-      const id = drag.attr('id');
-      const scheme = this.props.schemes.find(s => s.id === id);
-      const { sx, sy } = paper.scale();
-      const { tx, ty } = paper.translate();
-      const newState = true;
+    // paper.on('*', cell => {
+    //   console.log('change:target', arguments)
+    //   // const target = cell.get('target').id;
+    //   // if (target) {
+    //   //   cell.attr('data/target', target);
+    //   // }
+    // });
 
-      state({
-        data: {
-          id: vis.util.randomUUID(),
-          position: {
-            x: (event.clientX - tx) / sx - 50,
-            y: (event.clientY - ty) / sy - 50,
-          },
-          name: scheme.name,
-          desc: scheme.desc,
-          scheme: scheme.id,
-        },
-        newState,
-        graph,
-      });
-    });
+    // this.addDragListener();
+
+    this.drawScheme();
   }
 
-  saveSheme = async () => {
-    const { saveGraph, loadHistory } = this.props;
-    const links = this.graph.getLinks();
-    const elements = this.graph.getElements();
-
-    const { scheme: { name, desc, removed }, showHistory } = this.state;
-    const { id } = this.state.originScheme;
-
-    const updatedNodes = elements.map(el => ({
-      id: el.id,
-      name: el.attr('data/name') || null,
-      desc: el.attr('data/desc') || null,
-      scheme: el.attr('data/scheme'),
-      position: el.position(),
-    }));
-
-    const startNodeModel = elements.find(
-      el => el.attr('data/startNode') === true,
-    );
-    // assept(true, 'message')
-    if (!startNodeModel) return console.log('startNode not specific');
-    const startNode = startNodeModel.id;
-
-    const updatedEdge = links.map(el => ({
-      id: el.id,
-      source: el.getSourceElement().id,
-      target: el.getTargetElement().id,
-      condition: el.attr('data/condition') || null,
-      roles: el.attr('data/roles') || null,
-    }));
-
-    const originSheme = await saveGraph({
-      id,
-      name,
-      desc,
-      startNode,
-      removed,
-      edges: updatedEdge,
-      nodes: updatedNodes,
-    });
-
-    this.drawScheme(originSheme);
-
-    if (showHistory) {
-      const history = await loadHistory(originSheme.id);
-
-      this.drawHistory(history);
-    }
+  changeTarget = (id, target, source) => {
+    // console.log('id, target', id, target)
+    const { scheme: { graph: { edges } }, updateEdge } = this.props;
+    const eventEdge = edges.find(edge => edge.id === id);
+    updateEdge({ ...eventEdge, id, target, source });
   };
 
-  drawScheme = originScheme => {
+  updatePosition = (id, position) => {
+    const { scheme: { graph: { nodes } }, updateNode } = this.props;
+    const eventNode = nodes.find(node => node.id === id);
+    updateNode({ ...eventNode, position });
+  };
+
+  // addDragListener = () => {
+  //   return;
+  //   const drag = $('.drag-me');
+  //   drag.off();
+  //   drag.dragged((event, drag) => {
+  //     const { graph, paper, props: { schemes, updateNode } } = this;
+  //     // const state = joint.shapes.tm.MyStateFactory;
+  //     // const { originScheme } = this.props;
+  //     // if (!originScheme.id) return console.log("scheme isn't exists");
+  //     const id = drag.attr('id');
+  //     const scheme = schemes.find(s => s.id === id);
+  //     const { sx, sy } = paper.scale();
+  //     const { tx, ty } = paper.translate();
+  //     // const newState = true;
+  //
+  //     updateNode({
+  //       id: vis.util.randomUUID(),
+  //       position: {
+  //         x: (event.clientX - tx) / sx - 50,
+  //         y: (event.clientY - ty) / sy - 50,
+  //       },
+  //       name: scheme.name,
+  //       desc: scheme.desc,
+  //       scheme: scheme.id,
+  //       startNode: false,
+  //     });
+  //
+  //     // state({
+  //     //   data: {
+  //     //     id: vis.util.randomUUID(),
+  //     //     position: {
+  //     //       x: (event.clientX - tx) / sx - 50,
+  //     //       y: (event.clientY - ty) / sy - 50,
+  //     //     },
+  //     //     name: scheme.name,
+  //     //     desc: scheme.desc,
+  //     //     scheme: scheme.id,
+  //     //   },
+  //     //   graph,
+  //     // });
+  //   });
+  // };
+
+  componentWillReceiveProps({ scheme, history, schemes }) {
+    // if (new !== old)
+    if (this.props.scheme !== scheme) {
+      setTimeout(() => {
+        this.drawScheme();
+      });
+    }
+    if (this.props.history !== history) {
+      setTimeout(() => {
+        this.drawHistory();
+      });
+    }
+    // if (this.props.schemes !== schemes) {
+    //   setTimeout(() => {
+    //     this.addDragListener();
+    //   });
+    // }
+  }
+
+  // saveSheme = async () => {
+  //   const { saveGraph } = this.props;
+  //   const { fetch } = this.context;
+  //
+  //   const links = this.graph.getLinks();
+  //   const elements = this.graph.getElements();
+  //
+  //   // todo
+  //   const { scheme: { name, desc, removed, id } } = this.props;
+  //   // const { scheme: { name, desc, removed } } = this.state;
+  //   // const { id } = this.state.originScheme;
+  //
+  //   const updatedNodes = elements.map(el => ({
+  //     id: el.id,
+  //     name: el.attr('data/name') || null,
+  //     desc: el.attr('data/desc') || null,
+  //     scheme: el.attr('data/scheme'),
+  //     position: el.position(),
+  //   }));
+  //
+  //   const startNodeModel = elements.find(
+  //     el => el.attr('data/startNode') === true,
+  //   );
+  //   // assept(true, 'message')
+  //   if (!startNodeModel) return console.log('startNode not specific');
+  //   const startNode = startNodeModel.id;
+  //
+  //   const updatedEdge = links.map(el => ({
+  //     id: el.id,
+  //     source: el.getSourceElement().id,
+  //     target: el.getTargetElement().id,
+  //     condition: el.attr('data/condition') || null,
+  //     roles: el.attr('data/roles') || null,
+  //   }));
+  //
+  //   saveGraph(
+  //     {
+  //       id,
+  //       name,
+  //       desc,
+  //       startNode,
+  //       removed,
+  //       edges: updatedEdge,
+  //       nodes: updatedNodes,
+  //     },
+  //     fetch,
+  //   );
+  //
+  //   // this.drawScheme(originSheme);
+  //
+  //   // if (showHistory) {
+  //   //   /* const history = await */ loadHistory(fetch, originSheme.id);
+  //
+  //   // this.drawHistory();
+  //   // }
+  // };
+
+  /**
+   * стор должет быть один. не обновлять ребра и вершины напрямую. сравнивать оригинальные данные с новыми. если оригинальных данных нету
+   * нужно добавить новый cell. если оригинальные есть, нужно удалить cell. если есть но изменились, нужно обновить.
+   */
+  drawScheme = () => {
+    // const { originScheme } = this.props;
+    // if (!originScheme) return;
     const {
-      graph: { nodes, edges },
-      startNode,
-      name,
-      desc,
-      id,
-      removed,
-    } = originScheme;
+      scheme: { graph: { nodes, edges }, startNode },
+      originScheme,
+      // name,
+      // desc,
+      // id,
+      // removed,
+    } = this.props;
+    const { changeTarget, updatePosition } = this;
     const graph = this.graph;
     const state = joint.shapes.tm.MyStateFactory;
     const link = joint.shapes.tm.MyLinkFactory;
-    const scheme = { name, desc, id, removed };
+    // todo scheme не нужна. нужна
+    // const scheme = { name, desc, id, removed };
 
-    graph.clear();
-
-    nodes.forEach(data =>
-      state({ data: { ...data, startNode: data.id === startNode }, graph }),
+    const elements = this.graph.getElements();
+    const nodesMap = nodes.reduce((r, e) => ({ ...r, [e.id]: e }), {});
+    const originNodesMap = originScheme.graph.nodes.reduce(
+      (r, e) => ({ ...r, [e.id]: e }),
+      {},
     );
-    edges.forEach(data =>
-      link({
-        data,
-        graph,
-      }),
+    // update or create
+    nodes.forEach(data => {
+      const cell = graph.getCell(data.id);
+      const origin_data = originNodesMap[data.id] || {};
+      if (cell) {
+        console.log(origin_data);
+        cell.prop('attrs/origin_data', origin_data);
+        cell.prop('attrs/data', data);
+        // cell.attr({data,origin_data});
+      } else {
+        console.log(4324232423);
+        state({
+          data,
+          origin_data,
+          graph,
+          updatePosition,
+        });
+      }
+    });
+    // remove if not exists into model
+    elements.forEach(node => {
+      if (!nodesMap[node.id]) {
+        node.remove();
+      }
+    });
+
+    const links = this.graph.getLinks();
+    const edgesMap = edges.reduce((r, e) => ({ ...r, [e.id]: e }), {});
+    const originEdgesMap = originScheme.graph.edges.reduce(
+      (r, e) => ({ ...r, [e.id]: e }),
+      {},
     );
-
-    this.setState({
-      originScheme,
-      scheme,
+    // update or create
+    edges.forEach(data => {
+      const cell = graph.getCell(data.id);
+      const origin_data = originEdgesMap[data.id] || {};
+      if (cell) {
+        cell.attr('data', data);
+        cell.attr('origin_data', origin_data);
+      } else {
+        console.log('data', data);
+        link({
+          data,
+          origin_data,
+          graph,
+          changeTarget,
+        });
+      }
     });
-  };
-
-  openScheme = async (schemeNone, timestamp = Date.now()) => {
-    if (schemeNone.startNode.length) {
-      const { loadGraph } = this.props;
-
-      const originScheme = await loadGraph(schemeNone.id, timestamp);
-      this.drawScheme(originScheme);
-    }
-  };
-
-  schemeClear = () => {
-    this.graph.clear();
-    this.setState({
-      originScheme: {},
-      scheme: {},
-    });
-  };
-
-  newScheme = () => {
-    this.drawScheme({
-      id: vis.util.randomUUID(),
-      name: 'new',
-      desc: 'new',
-      graph: {
-        nodes: [],
-        edges: [],
-      },
-    });
-  };
-
-  removeScheme = async () => {
-    const { saveGraph } = this.props;
-    const {
-      graph: { nodes, edges },
-      startNode,
-      name,
-      desc,
-      id,
-    } = this.state.originScheme;
-    const originSheme = await saveGraph({
-      startNode,
-      name,
-      desc,
-      id,
-      nodes,
-      edges,
-      removed: true,
+    // remove if not exists into model
+    links.forEach(link => {
+      if (!edgesMap[link.id]) {
+        link.remove();
+      }
     });
 
-    this.drawScheme(originSheme);
+    //   const elements = this.graph.getElements();
+
+    // graph.clear();
+
+    // nodes.forEach(data =>
+    //   state({ data: { ...data, startNode: data.id === startNode }, graph }),
+    // );
+    // edges.forEach(data =>
+    //   link({
+    //     data,
+    //     graph,
+    //   }),
+    // );
+
+    // this.setState({
+    //   originScheme,
+    //   scheme,
+    // });
   };
 
-  changeScheme = scheme => {
-    this.setState({ scheme });
-  };
+  // openScheme = async (schemeNone, timestamp = Date.now()) => {
+  //   if (schemeNone.startNode.length) {
+  //     const { loadGraph } = this.props;
+  //     const { fetch } = this.context;
+  //
+  //     /* const originScheme = await */ loadGraph(
+  //       schemeNone.id,
+  //       timestamp,
+  //       fetch,
+  //     );
+  //     // this.drawScheme(originScheme);
+  //   }
+  // };
+
+  // revert
+  // schemeClear = () => {
+  //   // this.graph.clear();
+  //   // this.setState({
+  //   //   originScheme: {},
+  //   //   scheme: {},
+  //   // });
+  // };
+
+  // newScheme = () => {
+  //   this.props.setCurrentScheme({
+  //     name: 'Новая схема',
+  //     desc: '',
+  //     graph: {
+  //       nodes: [],
+  //       edges: [],
+  //     },
+  //   });
+  //   // this.drawScheme({
+  //   //   id: vis.util.randomUUID(),
+  //   //   name: 'new',
+  //   //   desc: 'new',
+  //   //   graph: {
+  //   //     nodes: [],
+  //   //     edges: [],
+  //   //   },
+  //   // });
+  // };
+
+  // removeScheme = async () => {
+  //   const { saveGraph } = this.props;
+  //   const { fetch } = this.context;
+  //   const {
+  //     graph: { nodes, edges },
+  //     startNode,
+  //     name,
+  //     desc,
+  //     id,
+  //   } = this.state.originScheme;
+  //
+  //   saveGraph(
+  //     {
+  //       startNode,
+  //       name,
+  //       desc,
+  //       id,
+  //       nodes,
+  //       edges,
+  //       removed: true,
+  //     },
+  //     fetch,
+  //   );
+  //
+  //   // this.drawScheme(originSheme);
+  // };
+
+  // changeScheme = scheme => {
+  //   this.props.setScheme({ ...this.props.scheme, ...scheme });
+  //   // this.setState({ scheme });
+  // };
 
   openSchemeDesc = () => {
-    this.setState({
-      tab: 4,
+    const { setEditor, scheme } = this.props;
+    setEditor({
+      tab: 'scheme',
+      model: scheme,
+      showMenu: true,
     });
+    // this.setState({
+    //   tab: 'scheme',
+    // });
   };
 
-  drawHistory = history => {
-    const { originScheme } = this.state;
+  drawHistory = () => {
+    const { originScheme, history, timestamp } = this.props;
     const uuid = vis.util.randomUUID;
     const names = history.name.map(n => ({
       id: uuid(),
@@ -295,75 +494,105 @@ class Home extends React.Component {
       start: n.timestamp,
     }));
 
+    // console.log([...names, ...descs, ...graphs])
     this.dataSet.clear();
     this.dataSet.add([...names, ...descs, ...graphs]);
-    this.timelineE.moveTo(Date.now());
-    // this.timelineE.fit();
+    this.timeline.moveTo(timestamp || Date.now());
+    // this.timeline.fit();
 
-    this.timelineE.on('changed', event => {
-      clearTimeout(this.timeout2);
-      this.timeout2 = setTimeout(() => {
-        const { start, end } = this.timelineE.getWindow();
+    this.timeline.on('rangechanged', event => {
+      // clearTimeout(this.timeout2);
+      // this.timeout2 = setTimeout(() => {
+      const { loadGraph, loadByHistory } = this.props;
+      const { fetch } = this.context;
+        const { start, end } = this.timeline.getWindow();
         console.log(start.getTime(), end.getTime());
         const timestamp = Math.round((start.getTime() + end.getTime()) / 2);
 
-        this.openScheme(originScheme, timestamp);
-      }, 1000);
+      loadByHistory(originScheme.id, timestamp, fetch);
+      // loadGraph(originScheme.id, timestamp, fetch);
+        // this.openScheme(originScheme, timestamp);
+      // }, 1000);
     });
   };
 
-  showHistoryHandler = async () => {
-    const { originScheme, showHistory } = this.state;
-    if (showHistory) {
-      return this.setState({
-        showHistory: false,
-      });
-    }
+  // showHistoryHandler = async () => {
+  //   const { fetch } = this.context;
+  //   const { toggleHistory } = this.props;
+  //   toggleHistory(fetch);
+  //   // const { originScheme } = this.state;
+  //   // if (showHistory) {
+  //   //   return this.setState({
+  //   //     showHistory: false,
+  //   //   });
+  //   // }
+  //
+  //   // const { loadHistory } = this.props;
+  //   // /*const history = await */loadHistory(originScheme.id, fetch);
+  //
+  //   // this.setState({
+  //   //   showHistory: true,
+  //   // });
+  //
+  //   // this.drawHistory();
+  // };
 
-    const { loadHistory } = this.props;
-    const history = await loadHistory(originScheme.id);
+  // toggleMenu = () => {
+  //   const { setEditor, editor: { showMenu } } = this.props;
+  //   // const { showMenu } = this.state;
+  //   setEditor({
+  //     showMenu: !showMenu,
+  //   });
+  //   // this.setState({ showMenu: !showMenu });
+  // };
 
-    this.setState({
-      showHistory: true,
-    });
+  // toggleTab = tab => {
+  //   const { setEditor } = this.props;
+  //   // const { showMenu } = this.state;
+  //   setEditor({
+  //     tab,
+  //   });
+  // };
+  // this.setState({
+  //   tab,
+  // });
 
-    this.drawHistory(history);
-  };
-
-  toggleMenu = () => {
-    const { showMenu } = this.state;
-    this.setState({ showMenu: !showMenu });
-  };
-
-  toggleTab = tab =>
-    this.setState({
-      tab,
-    });
+  paperProps = () => ({
+    scale: this.paper.scale(),
+    translate: this.paper.translate(),
+  });
 
   render() {
     const {
-      openScheme,
-      newScheme,
-      saveSheme,
-      changeScheme,
+      // openScheme,
+      // newScheme,
+      // saveSheme,
+      // changeScheme,
       openSchemeDesc,
-      showHistoryHandler,
-      toggleMenu,
-      toggleTab,
-      schemeClear,
-      removeScheme,
+      paperProps,
+      // showHistoryHandler,
+      // toggleMenu,
+      // toggleTab,
+      // schemeClear,
+      // removeScheme,
     } = this;
-    const { schemes } = this.props;
     const {
+      // editor: { tab, showMenu, model },
+      // schemes,
       originScheme,
-      scheme,
       scheme: { name, desc },
-      node,
-      link,
-      tab,
-      showMenu,
       showHistory,
-    } = this.state;
+    } = this.props;
+    // const {
+    // originScheme,
+    // scheme,
+    // scheme: { name, desc },
+    // node,
+    // link,
+    // tab,
+    // showMenu,
+    // showHistory,
+    // } = this.state;
 
     const nameClass = cx({
       [s.name]: true,
@@ -382,28 +611,7 @@ class Home extends React.Component {
 
     return (
       <div className={s.root}>
-        <ControlPanel
-          {...{
-            schemes,
-            scheme,
-            node,
-            link,
-            tab,
-            showMenu,
-            showHistory,
-            handler: {
-              toggleMenu,
-              toggleTab,
-              openScheme,
-              newScheme,
-              saveSheme,
-              changeScheme,
-              showHistoryHandler,
-              schemeClear,
-              removeScheme,
-            },
-          }}
-        />
+        <ControlPanel {...{ paperProps }} />
         <div className={s.descCont} onClick={openSchemeDesc}>
           <div className={nameClass}>{name}</div>
           <div className={descClass}>{desc}</div>
@@ -412,10 +620,7 @@ class Home extends React.Component {
           className={cx(s.container, 'can-dropped')}
           ref={container => (this.container = container)}
         />
-        <div
-          className={timelineClass}
-          ref={timeline => (this.timeline = timeline)}
-        >
+        <div className={timelineClass} ref={timeline => (this.tEl = timeline)}>
           <div className={s.ceparatorContainer}>
             <div className={s.ceparator} />
           </div>
@@ -425,4 +630,8 @@ class Home extends React.Component {
   }
 }
 
-export default withStyles(s, dragDropCss, jointjsCss, shapesCss, visCss)(Home);
+Home.contextTypes = {
+  fetch: PropTypes.func,
+};
+
+export default withStyles(s, jointjsCss, shapesCss, visCss)(Home);

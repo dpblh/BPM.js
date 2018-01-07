@@ -1,0 +1,6 @@
+{
+  "name": "FormScheme",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./FormScheme.js"
+}

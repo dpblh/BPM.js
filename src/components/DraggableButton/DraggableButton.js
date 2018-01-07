@@ -1,15 +1,19 @@
+import React, { Component } from 'react';
+import withStyles from 'isomorphic-style-loader/lib/withStyles';
 import $ from 'jquery';
+import s from './DraggableButton.css';
 
-function dragged(callback) {
-  const droppable = $('.can-dropped');
-  this.each(function each() {
-    const $this = $(this);
+class DragableButton extends Component {
+  componentDidMount() {
+    const { callback } = this.props;
+    const droppable = $('.can-dropped');
+    const $this = $(this.element);
     const body = $(document.body);
 
     let drag, offsetX, offsetY;
     let moved = false;
 
-    $this.addClass('dragged');
+    $this.addClass(s.dragged);
 
     $this.mousedown(function mousedown(event) {
       drag = $(this).clone();
@@ -32,7 +36,7 @@ function dragged(callback) {
       }
 
       function bodyMouseUpHandler() {
-        $this.removeClass('clone-dragged');
+        $this.removeClass(s.cloneDragged);
         droppable.off('mouseup', droppableMouseUpHandler);
         body.off('mouseup', bodyMouseUpHandler);
         drag.remove();
@@ -46,8 +50,8 @@ function dragged(callback) {
     function moveAt(event) {
       if (drag) {
         moved = true;
-        $this.addClass('clone-dragged');
-        drag.addClass('dragging');
+        $this.addClass(s.cloneDragged);
+        drag.addClass(s.dragging);
         drag.css({
           left: event.pageX - offsetX,
           top: event.pageY - offsetY,
@@ -56,7 +60,12 @@ function dragged(callback) {
     }
 
     body.mousemove(moveAt);
-  });
+  }
+
+  render() {
+    const { callback, ...props } = this.props;
+    return <div {...props} ref={el => (this.element = el)} />;
+  }
 }
 
-$.fn.dragged = dragged;
+export default withStyles(s)(DragableButton);

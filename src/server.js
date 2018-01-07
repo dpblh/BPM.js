@@ -14,7 +14,7 @@ import bodyParser from 'body-parser';
 import expressJwt, { UnauthorizedError as Jwt401Error } from 'express-jwt';
 import expressGraphQL from 'express-graphql';
 import jwt from 'jsonwebtoken';
-import fetch from 'node-fetch';
+import nodeFetch from 'node-fetch';
 import React from 'react';
 import ReactDOM from 'react-dom/server';
 import PrettyError from 'pretty-error';
@@ -28,6 +28,9 @@ import router from './router';
 import models from './data/models';
 import schema from './data/schema';
 import assets from './assets.json'; // eslint-disable-line import/no-unresolved
+import configureStore from './store/configureStore';
+import { setRuntimeVariable } from './actions/runtime';
+import rootSaga from './sagas';
 import config from './config';
 // import './seed';
 
@@ -41,7 +44,7 @@ global.navigator = global.navigator || {};
 global.navigator.userAgent = global.navigator.userAgent || 'all';
 
 //
-// Register NodeScheme.js middleware
+// Register Node.js middleware
 // -----------------------------------------------------------------------------
 app.use(express.static(path.resolve(__dirname, 'public')));
 app.use(cookieParser());
@@ -115,6 +118,30 @@ app.get('*', async (req, res, next) => {
   try {
     const css = new Set();
 
+    // Universal HTTP client
+    const fetch = createFetch(nodeFetch, {
+      baseUrl: config.api.serverUrl,
+      cookie: req.headers.cookie,
+    });
+
+    const initialState = {
+      user: req.user || null,
+    };
+
+    const store = configureStore(initialState, {
+      fetch,
+      // I should not use `history` on server.. but how I do redirection? follow universal-router
+    });
+
+    const saga = store.runSaga(rootSaga);
+
+    store.dispatch(
+      setRuntimeVariable({
+        name: 'initialNow',
+        value: Date.now(),
+      }),
+    );
+
     // Global (context) variables that can be easily accessed from any React component
     // https://facebook.github.io/react/docs/context.html
     const context = {
@@ -124,16 +151,15 @@ app.get('*', async (req, res, next) => {
         // eslint-disable-next-line no-underscore-dangle
         styles.forEach(style => css.add(style._getCss()));
       },
-      // Universal HTTP client
-      fetch: createFetch(fetch, {
-        baseUrl: config.api.serverUrl,
-        cookie: req.headers.cookie,
-      }),
+      fetch,
+      // You can access redux through react-redux connect
+      store,
+      storeSubscription: null,
     };
 
     const route = await router.resolve({
       ...context,
-      pathname: req.path,
+      path: req.path,
       query: req.query,
     });
 
@@ -144,7 +170,9 @@ app.get('*', async (req, res, next) => {
 
     const data = { ...route };
     data.children = ReactDOM.renderToString(
-      <App context={context}>{route.component}</App>,
+      <App context={context} store={store}>
+        {route.component}
+      </App>,
     );
     data.styles = [{ id: 'css', cssText: [...css].join('') }];
     data.scripts = [assets.vendor.js];
@@ -152,11 +180,18 @@ app.get('*', async (req, res, next) => {
       data.scripts.push(...route.chunks.map(chunk => assets[chunk].js));
     }
     data.scripts.push(assets.client.js);
-    data.app = {
-      apiUrl: config.api.clientUrl,
-    };
+
+    store.close();
+    await saga.done.then(() => {
+      console.log('sagas complete')
+      data.app = {
+        apiUrl: config.api.clientUrl,
+        state: context.store.getState(),
+      };
+    });
 
     const html = ReactDOM.renderToStaticMarkup(<Html {...data} />);
+    res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
     res.status(route.status || 200);
     res.send(`<!doctype html>${html}`);
   } catch (err) {
