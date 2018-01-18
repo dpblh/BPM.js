@@ -250,6 +250,7 @@ class Home extends React.Component {
     timeline.moveTo(timestamp || Date.now());
 
     this.timeline.on('rangechanged', () => {
+      const { props: { originScheme } } = this;
       const { start, end } = timeline.getWindow();
       const timestamp = Math.round((start.getTime() + end.getTime()) / 2);
       loadByHistory(originScheme.id, timestamp, fetch);

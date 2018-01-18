@@ -58,7 +58,8 @@
     "svg-pan-zoom": "github:ariutta/svg-pan-zoom",
     "universal-router": "^3.2.0",
     "vis": "^4.21.0",
-    "whatwg-fetch": "^2.0.3"
+    "whatwg-fetch": "^2.0.3",
+    "parserjs": "https://github.com/dpblh/parserjs.git#a6940973aa83bcece923d74b2da4b777c29bce1c"
   },
   "devDependencies": {
     "@babel/core": "7.0.0-beta.32",
@@ -76,6 +77,7 @@
     "babel-jest": "^21.2.0",
     "babel-loader": "8.0.0-beta.0",
     "babel-plugin-transform-react-remove-prop-types": "^0.4.10",
+    "babel-polyfill": "^6.26.0",
     "browser-sync": "^2.18.13",
     "chokidar": "^1.7.0",
     "css-loader": "^0.28.7",

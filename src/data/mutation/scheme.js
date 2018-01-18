@@ -47,7 +47,7 @@ const scheme = {
   async resolve(a, { id, name, desc, startNode, nodes, edges, removed }) {
     try {
       // find or create
-      const schema = await Scheme.findOne({ _id: id })
+      const { nodesOrigin, edgesOrigin } = await Scheme.findOne({ _id: id })
         // .then(s => new SchemeV(s).attrs())
         .then(async s => {
           const last = new SchemeV(s).attrs();
@@ -55,18 +55,24 @@ const scheme = {
             { id, name, desc, startNode, removed },
             last,
           );
-          return new SchemeV(s);
+          return new SchemeV(s).graph().then(({ nodes, edges }) => ({
+            nodesOrigin: nodes,
+            edgesOrigin: edges,
+          }));
         })
         .catch(async () => {
           await Scheme.createFromDTO({ id, name, desc, startNode, removed });
-          return Scheme.findOne({ _id: id }).then(s => new SchemeV(s));
+          return {
+            nodesOrigin: [],
+            edgesOrigin: [],
+          };
         });
 
       // get last version graph
-      const nodesOrigin = await Node.find({}).then(nodes =>
+      const nodesOrigin2 = await Node.find({}).then(nodes =>
         nodes.map(edge => new NodeV(edge)),
       );
-      const edgesOrigin = await Edge.find({}).then(edges =>
+      const edgesOrigin2 = await Edge.find({}).then(edges =>
         edges.map(edge => new EdgeV(edge)),
       );
       // const { nodesOrigin, edgesOrigin } = await schema
@@ -78,6 +84,9 @@ const scheme = {
       // prepared hash table
       const nodesOriginMap = toMap(nodesOrigin);
       const edgesOriginMap = toMap(edgesOrigin);
+
+      const nodesOriginMap2 = toMap(nodesOrigin2);
+      const edgesOriginMap2 = toMap(edgesOrigin2);
       const nodesMap = toMap(nodes);
       const edgesMap = toMap(edges);
       // todo need transaction api
@@ -92,8 +101,8 @@ const scheme = {
       nodes = _.differenceBy(nodes, nodesForRemove, 'id');
       edges = _.differenceBy(edges, edgesForRemove, 'id');
       // for create
-      const nodesForCreate = nodes.filter(node => !nodesOriginMap[node.id]);
-      const edgesForCreate = edges.filter(node => !edgesOriginMap[node.id]);
+      const nodesForCreate = nodes.filter(node => !nodesOriginMap2[node.id]);
+      const edgesForCreate = edges.filter(node => !edgesOriginMap2[node.id]);
       await Node.createFromDTOs(nodesForCreate);
       await Edge.createFromDTOs(edgesForCreate);
 
@@ -102,14 +111,14 @@ const scheme = {
       edges = _.differenceBy(edges, edgesForCreate, 'id');
       // for update
       const nodesForUpdate = nodes.filter(
-        node => !nodeEquals(nodesOriginMap[node.id], node),
+        node => !nodeEquals(nodesOriginMap2[node.id], node),
       );
       const edgesForUpdate = edges.filter(
-        node => !edgeEquals(edgesOriginMap[node.id], node),
+        node => !edgeEquals(edgesOriginMap2[node.id], node),
       );
 
-      await Node.updateFromDTOs(nodesForUpdate, nodesOriginMap);
-      await Edge.updateFromDTOs(edgesForUpdate, edgesOriginMap);
+      await Node.updateFromDTOs(nodesForUpdate, nodesOriginMap2);
+      await Edge.updateFromDTOs(edgesForUpdate, edgesOriginMap2);
     } catch (e) {
       console.log(e);
       throw e;
