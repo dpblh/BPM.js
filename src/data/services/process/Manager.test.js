@@ -1,6 +1,14 @@
+import nodeFetch from 'node-fetch';
 import p from './Manager';
+import createFetch from '../../../createFetch';
+import config from '../../../config';
+import Process from '../../models/Process';
 
 describe('ParserRoles', () => {
+  const fetch = createFetch(nodeFetch, {
+    baseUrl: config.api.serverUrl,
+  });
+
   test('expression', () => {
     expect.assertions(1);
 
@@ -107,8 +115,37 @@ describe('ParserRoles', () => {
 
     const scheme = '60f43ecc-285a-49d2-ad97-f6061c5e30bc';
 
-    return p
-      .run(scheme, {})
-      .then(({ stack }) => expect(stack[1].state.str).toEqual('fffff'));
+    return p.run(scheme, {}).then(({ stack }) => {
+      console.log('------------------', stack);
+      expect(stack[1].state.str).toEqual('fffff');
+    });
+  });
+
+  test('test await', async () => {
+    expect.assertions(3);
+
+    const scheme = '5cc7c1b5-45bf-4a88-814a-31bfcd877c66';
+
+    const { stack, id } = await p.run(scheme, {});
+
+    expect(stack.length).toEqual(2);
+
+    const resp = await fetch('/graphql', {
+      body: JSON.stringify({
+        query: `mutation($id: String!, $status: String!) {
+          resumeScheme(id: $id, status: $status)
+        }`,
+        variables: {
+          id,
+          status: 'done',
+        },
+      }),
+    }).then(response => response.json());
+
+    expect(resp.data.resumeScheme).toEqual(true);
+
+    const process = await Process.findById(id);
+
+    expect(process.stack.length).toEqual(3);
   });
 });

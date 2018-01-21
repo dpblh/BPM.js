@@ -7,6 +7,8 @@ import Edge from '../../models/Edge';
 import { getVal, setLocalVal, setGlobalVal } from './Stack';
 import { script as rules } from './ParserRoles';
 import SchemeV from '../../virtualizers/scheme';
+import NodeV from '../../virtualizers/node';
+import EdgeV from '../../virtualizers/edge';
 
 const listener = {
   test_1: (getVar, setVar) => ({
@@ -16,6 +18,10 @@ const listener = {
   test_2: (getVar, setVar) => ({
     result: getVar('y') - getVar('x'),
     status: 'done',
+  }),
+  test_await: (getVar, setVar) => ({
+    result: 1,
+    status: 'await',
   }),
 };
 
@@ -30,6 +36,121 @@ const toMap = (array, key) =>
   array.reduce((r, c) => ({ ...r, [c[key]]: c }), {});
 
 export default {
+  async resume(id, status) {
+    if (status === 'done') {
+      const process = await Process.findById(id);
+
+      const { edgeId } = process.stack[process.stack.length - 1];
+
+      const nodeId = await Edge.findById(edgeId).then(
+        e => new EdgeV(e).attrs(process.timestamp).target,
+      );
+
+      await this.next({ nodeId, process });
+    }
+  },
+  async next({ nodeId, schemeId, process }) {
+    const { timestamp } = process;
+
+    const schemes = await Scheme.find({}).then(s =>
+      s.map(edge => new SchemeV(edge).attrs(timestamp)),
+    );
+    const nodes = await Node.find({}).then(s =>
+      s.map(edge => new NodeV(edge).attrs(timestamp)),
+    );
+    const edges = await Edge.find({}).then(s =>
+      s.map(edge => new EdgeV(edge).attrs(timestamp)),
+    );
+
+    const schemeMap = toMap(schemes, 'id');
+    const nodeMap = toMap(nodes, 'id');
+
+    const edgesSourceMap = _.groupBy(edges, 'source');
+    const getEdgesByNode = node => edgesSourceMap[node.id] || [];
+
+    const nextScheme = async id => {
+      const scheme = schemeMap[id];
+
+      const startNode = nodeMap[scheme.startNode];
+
+      await currentStep(startNode);
+    };
+
+    const nextStep = async prevNode => {
+      // поиск следующего перехода
+      const availableEdges = getEdgesByNode(prevNode);
+
+      const edgesTrue = availableEdges.filter(e => {
+        const ot = availableEdges.filter(e2 => e2.id !== e.id);
+
+        // условие вычислтять на месте
+        const currentExp = e.conditionEval(process.stack);
+        const otherExp = ot
+          .map(e2 => e2.conditionEval(process.stack))
+          .some(_ => _);
+
+        return currentExp && !otherExp;
+      });
+
+      // если перехрд не найден. инициируем выход
+      if (edgesTrue.length === 0) {
+        return console.log('Конец продпрограммы');
+      }
+
+      // выбираем edge для перехода
+      const index =
+        edgesTrue.length > 1
+          ? Math.round(Math.random() * (edgesTrue.length - 1))
+          : 0;
+      const currentEdge = edgesTrue[index];
+
+      // добавляем стек
+      process.stack.push({
+        edgeId: currentEdge.id,
+        state: {},
+      });
+
+      // выполняем пресеты на edge
+      if (currentEdge.roles) {
+        rules.apply(currentEdge.roles).res.eval(process.stack);
+      }
+
+      // выбираем следующую node
+      const currentNode = nodeMap[currentEdge.target];
+
+      const scheme = schemeMap[currentNode.scheme];
+
+      if (scheme && scheme.startNode) {
+        await nextScheme(currentNode.scheme);
+      } else {
+        await currentStep(currentNode);
+      }
+    };
+
+    const currentStep = async currentNode => {
+      const { status, result } = await runScheme(
+        currentNode.scheme,
+        process.stack,
+      );
+
+      setLocalVal('result', result, process.stack);
+
+      // сохраняем промежуточный редультат
+      await Process.update({ _id: process._id }, process, { upsert: true });
+
+      // проверяем статус последнего шага
+      if (status === 'done') {
+        // запускаем подпрограмму
+        await nextStep(currentNode);
+      }
+    };
+
+    if (nodeId) {
+      await nextStep(nodeMap[nodeId]);
+    } else if (schemeId) {
+      await nextScheme(schemeId);
+    }
+  },
   async run(schemeId, initState = {}) {
     const _id = mongoose.Types.ObjectId();
     const timestamp = Date.now();
@@ -47,96 +168,7 @@ export default {
     };
     await Process.create(process);
 
-    const schemesAll = await Scheme.find({});
-    const nodesAll = await Node.find({});
-    const edgesAll = await Edge.find({});
-
-    const schemeMap = toMap(schemesAll, 'id');
-
-    const nextScheme = async id => {
-      let scheme = schemeMap[id];
-      const schemeV = new SchemeV(scheme).attrs(timestamp);
-      const { nodes, edges } = await Scheme.graph(
-        timestamp,
-        scheme,
-        nodesAll,
-        edgesAll,
-      );
-
-      const edgesSourceMap = _.groupBy(edges, 'source');
-      const nodeMap = toMap(nodes, 'id');
-
-      const getEdgesByNode = node => edgesSourceMap[node.id] || [];
-
-      const nextStep = async currentNode => {
-        const { status, result } = await runScheme(
-          currentNode.scheme,
-          process.stack,
-        );
-
-        setLocalVal('result', result, process.stack);
-
-        // сохраняем промежуточный редультат
-        await Process.update({ _id: process._id }, process, { upsert: true });
-
-        // проверяем статус последнего шага
-        if (status === 'done') {
-          const edges = getEdgesByNode(currentNode);
-
-          const edgesTrue = edges.filter(e => {
-            const ot = edges.filter(e2 => e2.id !== e.id);
-
-            // условие вычислтять на месте
-            const currentExp = e.conditionEval(process.stack);
-            const otherExp = ot
-              .map(e2 => e2.conditionEval(process.stack))
-              .some(_ => _);
-
-            return currentExp && !otherExp;
-          });
-
-          // если перехрд не найден. инициируем выход
-          if (edgesTrue.length === 0) {
-            return console.log('Конец продпрограммы');
-          }
-
-          // выбираем edge для перехода
-          const index =
-            edgesTrue.length > 1
-              ? Math.round(Math.random() * (edgesTrue.length - 1))
-              : 0;
-          const currentEdge = edgesTrue[index];
-
-          // добавляем стек
-          process.stack.push({
-            edgeId: currentEdge.id,
-            state: {},
-          });
-
-          // выполняем пресеты на edge
-          if (currentEdge.roles) {
-            rules.apply(currentEdge.roles).res.eval(process.stack);
-          }
-
-          // выбираем следующую node
-          const nextNode = nodeMap[currentEdge.target];
-          scheme = schemeMap[nextNode.scheme];
-
-          // запускаем подпрограмму
-          if (scheme && scheme.startNode.length) {
-            await nextScheme(nextNode.scheme);
-          } else {
-            await nextStep(nextNode, process);
-          }
-        }
-      };
-
-      const startNode = nodes.find(node => node.id === schemeV.startNode);
-
-      await nextStep(startNode, process);
-    };
-
-    await nextScheme(schemeId);
+    await this.next({ schemeId, process });
 
     return Process.findOne({ _id: process._id });
   },

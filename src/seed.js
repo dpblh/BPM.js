@@ -320,6 +320,25 @@ const seed = async () => {
     };
 
     await Scheme.update({ _id: scheme3._id }, scheme3, { upsert: true });
+
+    const scheme4 = {
+      _id: 'test_await',
+      name: [
+        {
+          timestamp: Date.now(),
+          value: 'Схема await',
+        },
+      ],
+      desc: [
+        {
+          timestamp: Date.now() - 20000,
+          value: 'Тест await',
+        },
+      ],
+      startNode: [],
+    };
+
+    await Scheme.update({ _id: scheme4._id }, scheme3, { upsert: true });
   } catch (e) {
     console.log(e);
   }

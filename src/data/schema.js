@@ -18,6 +18,7 @@ import historyOfScheme from './queries/historyOfScheme';
 import scheme from './queries/scheme';
 import schemes from './queries/schemes';
 import schemeM from './mutation/scheme';
+import resumeScheme from './mutation/resumeScheme';
 
 const schema = new Schema({
   query: new ObjectType({
@@ -33,6 +34,7 @@ const schema = new Schema({
   mutation: new ObjectType({
     name: 'Mutation',
     fields: {
+      resumeScheme,
       scheme: schemeM,
     },
   }),
