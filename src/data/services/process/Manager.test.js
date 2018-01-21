@@ -116,7 +116,6 @@ describe('ParserRoles', () => {
     const scheme = '60f43ecc-285a-49d2-ad97-f6061c5e30bc';
 
     return p.run(scheme, {}).then(({ stack }) => {
-      console.log('------------------', stack);
       expect(stack[1].state.str).toEqual('fffff');
     });
   });
