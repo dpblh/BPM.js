@@ -7,22 +7,24 @@ const EdgeScheme = new mongoose.Schema({
   target: { type: [new TimeStampScheme(String)] },
   roles: { type: [new TimeStampScheme(String)] },
   condition: { type: [new TimeStampScheme(String)] },
+  immediate: { type: [new TimeStampScheme(Boolean)] },
 });
 
 EdgeScheme.statics.createFromDTOs = function(edges) {
   return this.create(
-    edges.map(({ id, source, target, roles, condition }) => ({
+    edges.map(({ id, source, target, roles, condition, immediate }) => ({
       _id: id,
       source: [{ timestamp: Date.now(), value: source }],
       target: [{ timestamp: Date.now(), value: target }],
       roles: [{ timestamp: Date.now(), value: roles }],
       condition: [{ timestamp: Date.now(), value: condition }],
+      immediate: [{ timestamp: Date.now(), value: immediate }],
     })),
   );
 };
 
 EdgeScheme.statics.updateFromDTO = function(n1, last) {
-  const { id, source, target, roles, condition } = n1;
+  const { id, source, target, roles, condition, immediate } = n1;
   const update = { $push: {} };
   const query = { _id: id };
 
@@ -34,6 +36,8 @@ EdgeScheme.statics.updateFromDTO = function(n1, last) {
     update.$push.roles = { timestamp: Date.now(), value: roles };
   if (last.condition !== condition)
     update.$push.condition = { timestamp: Date.now(), value: condition };
+  if (last.immediate !== immediate)
+    update.$push.immediate = { timestamp: Date.now(), value: immediate };
 
   return this.update(query, update);
 };

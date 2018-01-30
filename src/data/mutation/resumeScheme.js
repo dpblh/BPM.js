@@ -18,12 +18,13 @@ import Manager from '../services/process/Manager';
 const resumeScheme = {
   type: BooleanType,
   args: {
-    id: { type: new NonNull(StringType) },
+    processId: { type: new NonNull(StringType) },
+    contextId: { type: new NonNull(StringType) },
     status: { type: new NonNull(StringType) },
   },
-  async resolve(a, { id, status }) {
+  async resolve(a, { processId, contextId, status }) {
     try {
-      await Manager.resume(id, status);
+      await Manager.resume(processId, contextId, status);
       return true;
     } catch (e) {
       console.log(e);

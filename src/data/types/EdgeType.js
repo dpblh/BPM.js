@@ -12,9 +12,8 @@ import {
   GraphQLID as ID,
   GraphQLString as StringType,
   GraphQLNonNull as NonNull,
-  GraphQLList as ListType,
+  GraphQLBoolean as BooleanType,
 } from 'graphql';
-import TimeStampStringType from './TimeStampStringType';
 
 const EdgeType = new ObjectType({
   name: 'Edge',
@@ -24,6 +23,7 @@ const EdgeType = new ObjectType({
     target: { type: new NonNull(StringType) },
     roles: { type: StringType },
     condition: { type: StringType },
+    immediate: { type: BooleanType },
   },
 });
 

@@ -9,6 +9,7 @@ export default class Edge extends Virtualize {
       target: this.getV('target', timestamp),
       roles: this.getV('roles', timestamp),
       condition: this.getV('condition', timestamp),
+      immediate: this.getV('immediate', timestamp),
       conditionEval(stack) {
         if (!this.eval) {
           this.eval = condition.apply(this.condition || 'true').res.eval;

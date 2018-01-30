@@ -11,6 +11,9 @@ class FormEdge extends Component {
     if (model.roles !== this.props.model.roles) {
       setFieldsValue({ roles: model.roles });
     }
+    if (model.immediate !== this.props.model.immediate) {
+      setFieldsValue({ immediate: model.immediate });
+    }
   }
 
   onChange = () => {
@@ -45,6 +48,18 @@ class FormEdge extends Component {
             rules: [],
           })}
         />
+        <label className="title-comment token comment">
+          /*immediate*/&nbsp;
+          <input
+            type="checkbox"
+            {...getFieldProps('immediate', {
+              onChange: this.onChange,
+              initialValue: model.immediate || false,
+              valuePropName: 'checked',
+              rules: [],
+            })}
+          />
+        </label>
       </div>
     );
   }

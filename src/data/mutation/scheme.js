@@ -25,10 +25,11 @@ import EdgeV from '../virtualizers/edge';
 
 const nodeEquals = (n1, { name, desc, position }) =>
   n1.name === name && n1.desc === desc && n1.position === position;
-const edgeEquals = (n1, { source, target, roles, condition }) =>
+const edgeEquals = (n1, { source, target, roles, condition, immediate }) =>
   n1.source === source &&
   n1.target === target &&
   n1.roles === roles &&
+  n1.immediate === immediate &&
   n1.condition === condition;
 const toMap = list =>
   list.reduce((nodes, node) => ({ ...nodes, [node.id]: node }), {});

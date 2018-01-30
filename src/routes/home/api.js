@@ -36,7 +36,8 @@ export const loadGraph = async (fetch, id, timestamp) => {
                 source,
                 target,
                 roles,
-                condition
+                condition,
+                immediate
               },
               nodes{
                 id,
@@ -75,7 +76,8 @@ export const saveGraph = async (fetch, variables) => {
                 source,
                 target,
                 roles,
-                condition
+                condition,
+                immediate
               },
               nodes{
                 id,

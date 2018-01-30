@@ -12,8 +12,11 @@ const ProcessScheme = new mongoose.Schema({
   _id: { type: String, required: true, unique: true },
   timestamp: { type: Number, required: true },
   scheme: { type: String, required: true },
-  // currentNode: { type: String },//todo only first
-  stack: { type: [Stack], default: [] },
+  context: { type: Object, default: { main: { stack: [] } } },
+  eventLoop: { type: Object, default: [] },
+  eventAwaitLoop: { type: Object, default: [] },
+  eventJoinLoop: { type: Object, default: [] },
+  globalState: { type: Object, default: {} },
 });
 
 export default ProcessScheme;

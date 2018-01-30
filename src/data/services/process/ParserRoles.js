@@ -183,8 +183,20 @@ export const defineVar = reg(/var\s+/)
     },
   }));
 
+export const yieldDef = reg(/yield\s+/)
+  .andr(nameSpace)
+  .then(name => ({
+    eval: stack => {
+      setLocalVal(
+        name.eval(stack),
+        stack[stack.length - 2].state.result,
+        stack,
+      );
+    },
+  }));
+
 export const statement = parser((str, offset) =>
-  or(block, ifElse, defineVar, undefineVar).apply(str, offset),
+  or(block, ifElse, defineVar, undefineVar, yieldDef).apply(str, offset),
 ).then(st => ({
   eval: stack => st.eval(stack),
 }));

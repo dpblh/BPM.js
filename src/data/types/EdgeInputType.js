@@ -15,6 +15,7 @@ import {
   GraphQLNonNull as NonNull,
   GraphQLInt as IntType,
   GraphQLList as ListType,
+  GraphQLBoolean as BooleanType,
 } from 'graphql';
 
 const NodeInputType = new InputObjectType({
@@ -25,6 +26,7 @@ const NodeInputType = new InputObjectType({
     target: { type: StringType },
     roles: { type: StringType },
     condition: { type: StringType },
+    immediate: { type: BooleanType },
   },
 });
 

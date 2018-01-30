@@ -348,7 +348,7 @@ joint.shapes.tm.MyStateFactory = ({
 
 joint.shapes.tm.MyLinkFactory = ({
   data,
-  data: { id, source, target, name },
+  data: { id, source, target, name, immediate },
   origin_data,
   changeConnector,
   graph,
@@ -360,7 +360,10 @@ joint.shapes.tm.MyLinkFactory = ({
     target: { id: target },
     labels: [{ attrs: { text: { text: name } } }],
     attrs: {
-      '.connection': { stroke: color },
+      '.connection': {
+        stroke: color,
+        'stroke-dasharray': immediate ? '5 5' : '0',
+      },
       data,
       origin_data,
     },
@@ -378,6 +381,7 @@ joint.shapes.tm.MyLinkFactory = ({
     clearTimeout(timeout);
     timeout = setTimeout(() => {
       cell.attr('.connection/stroke', color);
+      cell.attr('.connection/stroke-dasharray', data.immediate ? '5 5' : '0');
     }, 100);
   });
   graph.addCell(cell);
