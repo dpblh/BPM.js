@@ -160,66 +160,219 @@ describe('ParserRoles', () => {
     expect(process.context.main.stack.length).toEqual(3);
   });
 
-  test('complex async await', () => {
-    expect.assertions(1);
+  test('complex async await', async () => {
+    expect.assertions(4);
 
     const scheme = '4bfa14d2-6fe6-45d8-81bc-d981b44db5bb';
 
-    return p.run(scheme, {}).then(process => {
-      console.log('!!!!!!!!!!!!!!!!!!!!!!!!_id_id_id_id_id', process._id);
-      expect(Object.values(process.context)).toMatchObject(
-        Object.values({
-          main: {
-            stack: [
-              { edgeId: 'main', state: { result: 1 } },
-              {
-                edgeId: '998bbdcf-5b25-496e-93fd-33062be6bdc0',
-                state: { a: 1, x: 10, y: 5, result: -5 },
+    let process = await p.run(scheme, {});
+    // .then(async process => {
+    console.log('!!!!!!!!!!!!!!!!!!!!!!!!_id_id_id_id_id', process._id);
+
+    const event1 = process.eventAwaitLoop[0];
+
+    const resp1 = await fetch('/graphql', {
+      body: JSON.stringify({
+        query: `mutation($processId: String!, $contextId: String!, $status: String!) {
+            resumeScheme(processId: $processId, contextId: $contextId, status: $status)
+          }`,
+        variables: {
+          processId: process._id,
+          contextId: event1.contextId,
+          status: 'done',
+        },
+      }),
+    }).then(response => response.json());
+
+    expect(resp1.data.resumeScheme).toEqual(true);
+
+    process = await Process.findById(process._id);
+
+    const event2 = process.eventAwaitLoop[0];
+    const event3 = process.eventAwaitLoop[1];
+
+    const resp2 = await fetch('/graphql', {
+      body: JSON.stringify({
+        query: `mutation($processId: String!, $contextId: String!, $status: String!) {
+            resumeScheme(processId: $processId, contextId: $contextId, status: $status)
+          }`,
+        variables: {
+          processId: process._id,
+          contextId: event2.contextId,
+          status: 'done',
+        },
+      }),
+    }).then(response => response.json());
+
+    expect(resp2.data.resumeScheme).toEqual(true);
+
+    const resp3 = await fetch('/graphql', {
+      body: JSON.stringify({
+        query: `mutation($processId: String!, $contextId: String!, $status: String!) {
+            resumeScheme(processId: $processId, contextId: $contextId, status: $status)
+          }`,
+        variables: {
+          processId: process._id,
+          contextId: event3.contextId,
+          status: 'done',
+        },
+      }),
+    }).then(response => response.json());
+
+    expect(resp3.data.resumeScheme).toEqual(true);
+
+    process = await Process.findById(process._id);
+
+    expect(Object.values(process.context)).toMatchObject(
+      Object.values({
+        '5a72258f5990ad653c832bd1': {
+          stack: [
+            {
+              state: {
+                result: NaN,
+                x: 15,
+                a: 3,
               },
-              {
-                edgeId: '580e5381-ff26-44ef-8b47-10eef7f1d8e4',
-                state: { step: -5, a: 2, result: -5 },
+              edgeId: '4d7c57c8-40a3-4364-a9b1-75fed9d4c6c1',
+            },
+            {
+              state: {
+                result: 1,
+                a: 999,
               },
-            ],
-          },
-          '5a6e1e929d20d53c242d03b3': {
-            parentContextId: 'main',
-            stack: [
-              {
-                edgeId: 'b06339b0-bed5-44ba-97e2-ed81e1c2d259',
-                state: { a: 4, result: NaN },
+              edgeId: 'cd1b9985-9536-4bb6-90a6-ced8d71d5ea7',
+            },
+            {
+              edgeId: '6f8a16d1-7093-4082-9981-9d89cddd33be',
+              state: {
+                step3: 1,
+                a: 5,
+                result: 1,
               },
-              {
-                edgeId: '2c2cd1b8-1cca-4ee4-91f6-708f7f04abc5',
-                state: { step4: NaN, a: 6, result: 1 },
+            },
+          ],
+          parentContextPosition: 1,
+          parentContextId: 'main',
+        },
+        '5a72258f5990ad653c832bd0': {
+          stack: [
+            {
+              state: {
+                result: NaN,
+                a: 4,
               },
-            ],
-          },
-          '5a6e1e929d20d53c242d03b2': {
-            parentContextId: 'main',
-            stack: [
-              {
-                edgeId: '4d7c57c8-40a3-4364-a9b1-75fed9d4c6c1',
-                state: { a: 3, x: 15, result: NaN },
+              edgeId: 'b06339b0-bed5-44ba-97e2-ed81e1c2d259',
+            },
+            {
+              state: {
+                result: 1,
+                a: 6,
+                step4: NaN,
               },
-              {
-                edgeId: 'cd1b9985-9536-4bb6-90a6-ced8d71d5ea7',
-                state: { step3: NaN, a: 5, result: 1 },
+              edgeId: '2c2cd1b8-1cca-4ee4-91f6-708f7f04abc5',
+            },
+          ],
+          parentContextPosition: 1,
+          parentContextId: 'main',
+        },
+        main: {
+          stack: [
+            {
+              state: {
+                result: 1,
+                a: 3,
+                x: 15,
               },
-            ],
-          },
-          '5a6e1e929d20d53c242d03ba': {
-            parentContextId: 'main',
-            stack: [
-              {
-                edgeId: '281682b9-0f9b-4aba-9a35-a98fe04e0d78',
-                state: { a: 7, result: NaN },
+              edgeId: 'main',
+            },
+            {
+              state: {
+                result: -5,
+                y: 5,
+                x: 10,
+                a: 1,
               },
-            ],
-          },
-        }),
-      );
-    });
+              edgeId: '998bbdcf-5b25-496e-93fd-33062be6bdc0',
+            },
+            {
+              state: {
+                result: -5,
+                a: 2,
+                step: -5,
+              },
+              edgeId: '580e5381-ff26-44ef-8b47-10eef7f1d8e4',
+            },
+          ],
+        },
+        '5a722590b48b2362430893c9': {
+          parentContextId: 'main',
+          parentContextPosition: 1,
+          stack: [
+            {
+              edgeId: '281682b9-0f9b-4aba-9a35-a98fe04e0d78',
+              state: {
+                a: 7,
+                result: 1,
+                str: 'second',
+              },
+            },
+          ],
+        },
+        '5a722590b48b2362430893cc': {
+          parentContextId: expect.stringMatching(/.+/),
+          parentContextPosition: 1,
+          stack: [
+            {
+              edgeId: '27438440-975c-40e4-9b52-cbe6ec8f37e8',
+              state: {
+                str: 'first',
+                result: 1,
+              },
+            },
+            {
+              edgeId: '7ac7b467-852a-4e24-b4c4-8026220d7b96',
+              state: {
+                str: '3',
+                result: 1,
+              },
+            },
+          ],
+        },
+        '5a722590b48b2362430893cd': {
+          parentContextId: expect.stringMatching(/.+/),
+          parentContextPosition: 1,
+          stack: [
+            {
+              edgeId: 'e67e3929-0b1b-4281-9997-817ac406656c',
+              state: {
+                str: 'second',
+                result: 1,
+              },
+            },
+            {
+              edgeId: '0cc893c4-8b5d-4b63-a4e5-4bb4d00f1a23',
+              state: {
+                str: '5',
+                result: 1,
+              },
+            },
+          ],
+        },
+        '5a722590b48b2362430893d0': {
+          parentContextId: expect.stringMatching(/.+/),
+          parentContextPosition: 1,
+          stack: [
+            {
+              edgeId: '6ffeab2a-b57d-4bd1-8d2d-366e645b64d6',
+              state: {
+                str: '6',
+                result: NaN,
+              },
+            },
+          ],
+        },
+      }),
+    );
   });
 
   //  4bfa14d2-6fe6-45d8-81bc-d981b44db5bb

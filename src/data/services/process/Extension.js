@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import { script as rules } from './ParserRoles';
+import { Done } from './States';
 
-const getId = () => mongoose.Types.ObjectId();
+const getId = () => mongoose.Types.ObjectId().toString();
 
 async function evalDefaultStep({
   outgoingSimpleEdge,
@@ -11,7 +12,7 @@ async function evalDefaultStep({
 }) {
   const separatedId = getId();
 
-  const { sendImmediateEvent, setSharedState, getSharedState, process } = this;
+  const { sendImmediateEvent, setSharedState, process } = this;
 
   if (outgoingImmediateEdges.length) {
     const state = {
@@ -28,19 +29,13 @@ async function evalDefaultStep({
         nodeId: edge.target,
         parentContextId: context,
         parentContextPosition: process.context[context].stack.length,
-        callback: {
-          stateId: separatedId,
-          fn() {
-            const sharedState = getSharedState(this.stateId);
-            sharedState.completedLength += 1;
-          },
-        },
       }),
     );
   }
 
   if (!outgoingSimpleEdge) {
-    return console.log('Конец продпрограммы');
+    console.log('Конец продпрограммы');
+    throw new Done();
   }
 
   // выбираем следующую node
@@ -79,9 +74,10 @@ async function evalAwaitAllStep({
       edgeId: event.edgeId,
       separatedId: event.separatedId,
       nodeId: outgoingSimpleEdge.source,
-      context: event.parentContextId,
+      contextId: event.parentContextId,
       contextPosition: event.parentContextPosition,
     });
+    throw new Done();
   }
 }
 

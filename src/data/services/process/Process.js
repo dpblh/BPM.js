@@ -14,7 +14,9 @@ import { script as rules } from './ParserRoles';
 
 import extension from './Extension';
 
-const getId = () => mongoose.Types.ObjectId();
+import { Await, Done } from './States';
+
+const getId = () => mongoose.Types.ObjectId().toString();
 
 const toMap = (array, key) =>
   array.reduce((r, c) => ({ ...r, [c[key]]: c }), {});
@@ -36,12 +38,22 @@ export default class Process {
     if (status === 'done') {
       await this.init();
       const { process } = this;
-      const event = process.eventAwaitLoop.find(e => e.context === contextId);
-      const { context } = event;
+      const event = process.eventAwaitLoop.find(e => e.contextId === contextId);
 
-      const stack = this.prepareStack(context);
-      const currentNode = this.getNode(event.name);
-      await this.stepDone(currentNode, stack, context);
+      const stack = this.prepareStack(event.contextId);
+      const currentNode = this.getNode(event.nodeId);
+
+      try {
+        await this.stepDone(currentNode, stack, event.contextId, event);
+      } catch (e) {
+        if (e instanceof Done && event.type === 'immediate') {
+          this.updateImmediateState(event);
+        }
+      }
+
+      const index = process.eventAwaitLoop.indexOf(event);
+      process.eventAwaitLoop.splice(index, 1);
+
       await this.eventLoop();
     }
   }
@@ -49,7 +61,13 @@ export default class Process {
   async run({ schemeId }) {
     await this.init();
     const scheme = this.getScheme(schemeId);
-    await this.evalScheme({ scheme, context: 'main' });
+    try {
+      await this.evalScheme({ scheme, context: 'main' });
+    } catch (e) {
+      if (e instanceof Done) {
+      } else if (e instanceof Done) {
+      }
+    }
     await this.eventLoop();
   }
 
@@ -70,14 +88,19 @@ export default class Process {
         const node = this.getNode(event.nodeId);
         const ingoingEdge = this.getEdge(event.edgeId);
 
-        await this.next({
-          node,
-          ingoingEdge,
-          context: event.contextId,
-          event,
-        });
+        try {
+          await this.next({
+            node,
+            ingoingEdge,
+            context: event.contextId,
+            event,
+          });
+        } catch (e) {
+          if (e instanceof Done) {
+            this.updateImmediateState(event);
+          }
+        }
 
-        event.callback && event.callback.fn();
         // process.context[event.name].finish_t = Date.now();
         // await eventLoop();
       }),
@@ -93,7 +116,7 @@ export default class Process {
 
             this.sendImmediateEvent({
               nodeId: event.nodeId,
-              parentContextId: event.context,
+              parentContextId: event.contextId,
               parentContextPosition: event.contextPosition,
               edgesId: eqEvents.map(a => a.edgeId),
             });
@@ -109,8 +132,6 @@ export default class Process {
 
     if (process.eventLoop.length) {
       await eventLoop();
-    } else {
-      console.log(process.eventJoinLoop);
     }
   };
 
@@ -158,9 +179,11 @@ export default class Process {
       await this.stepDone(node, stack, context, event);
     } else if (status === 'await') {
       this.sendAwaitEvent({
-        name: node.id,
-        context,
+        ...event,
+        nodeId: node.id,
+        contextId: context,
       });
+      throw new Await();
     }
   }
 
@@ -184,6 +207,11 @@ export default class Process {
       context,
       event,
     });
+  }
+
+  updateImmediateState(event) {
+    const sharedState = this.getSharedState(event.separatedId);
+    sharedState.completedLength += 1;
   }
 
   prepareStack(context, position) {

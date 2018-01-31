@@ -183,7 +183,7 @@ app.get('*', async (req, res, next) => {
 
     store.close();
     await saga.done.then(() => {
-      console.log('sagas complete')
+      console.log('sagas complete');
       data.app = {
         apiUrl: config.api.clientUrl,
         state: context.store.getState(),
