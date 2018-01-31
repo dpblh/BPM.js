@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import mongoose from 'mongoose';
 import { script as rules } from './ParserRoles';
 import { Done } from './States';
@@ -12,7 +13,7 @@ async function evalDefaultStep({
 }) {
   const separatedId = getId();
 
-  const { sendImmediateEvent, setSharedState, process } = this;
+  const { sendImmediateEvent, setTehState, process } = this;
 
   if (outgoingImmediateEdges.length) {
     const state = {
@@ -20,7 +21,7 @@ async function evalDefaultStep({
       length: outgoingImmediateEdges.length,
     };
 
-    setSharedState({ id: separatedId, state });
+    setTehState({ id: separatedId, state });
 
     outgoingImmediateEdges.forEach(edge =>
       sendImmediateEvent({
@@ -34,6 +35,9 @@ async function evalDefaultStep({
   }
 
   if (!outgoingSimpleEdge) {
+    if (event && event.type === 'immediate') {
+      this.incrementImmediateDone(event);
+    }
     console.log('Конец продпрограммы');
     throw new Done();
   }
@@ -69,14 +73,33 @@ async function evalAwaitAllStep({
       event,
     });
   } else {
-    const { sendJoinEvent } = this;
-    sendJoinEvent({
-      edgeId: event.edgeId,
-      separatedId: event.separatedId,
-      nodeId: outgoingSimpleEdge.source,
-      contextId: event.parentContextId,
-      contextPosition: event.parentContextPosition,
-    });
+    this.incrementImmediateDone(event);
+
+    const { getTehState } = this;
+    const state = getTehState(event.separatedId);
+    if (!state.handler) {
+      state.handler = {};
+    }
+
+    if (!state.handler[outgoingSimpleEdge.source]) {
+      state.handler[outgoingSimpleEdge.source] = {
+        edgesId: [],
+      };
+    }
+
+    state.handler[outgoingSimpleEdge.source].edgesId.push(event.edgeId);
+
+    if (state.completedLength === state.length) {
+      _.mapKeys(state.handler, handler => {
+        this.sendImmediateEvent({
+          nodeId: outgoingSimpleEdge.source,
+          parentContextId: event.parentContextId,
+          parentContextPosition: event.parentContextPosition,
+          edgesId: handler.edgesId,
+        });
+      });
+    }
+
     throw new Done();
   }
 }

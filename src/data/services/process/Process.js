@@ -46,8 +46,7 @@ export default class Process {
       try {
         await this.stepDone(currentNode, stack, event.contextId, event);
       } catch (e) {
-        if (e instanceof Done && event.type === 'immediate') {
-          this.updateImmediateState(event);
+        if (e instanceof Done) {
         }
       }
 
@@ -97,37 +96,12 @@ export default class Process {
           });
         } catch (e) {
           if (e instanceof Done) {
-            this.updateImmediateState(event);
           }
         }
 
         // process.context[event.name].finish_t = Date.now();
         // await eventLoop();
       }),
-    );
-
-    _.mapKeys(
-      _.groupBy(process.eventJoinLoop, 'separatedId'),
-      (events, separatedId) => {
-        const state = this.getSharedState(separatedId);
-        if (state.completedLength === state.length) {
-          _.mapKeys(_.groupBy(events, 'nodeId'), (eqEvents, nodeId) => {
-            const event = eqEvents[0];
-
-            this.sendImmediateEvent({
-              nodeId: event.nodeId,
-              parentContextId: event.contextId,
-              parentContextPosition: event.contextPosition,
-              edgesId: eqEvents.map(a => a.edgeId),
-            });
-
-            eqEvents.forEach(e => {
-              const index = process.eventJoinLoop.indexOf(e);
-              process.eventJoinLoop.splice(index, 1);
-            });
-          });
-        }
-      },
     );
 
     if (process.eventLoop.length) {
@@ -209,8 +183,8 @@ export default class Process {
     });
   }
 
-  updateImmediateState(event) {
-    const sharedState = this.getSharedState(event.separatedId);
+  incrementImmediateDone(event) {
+    const sharedState = this.getTehState(event.separatedId);
     sharedState.completedLength += 1;
   }
 
@@ -258,11 +232,11 @@ export default class Process {
     return scheme && scheme.startNode;
   }
 
-  setSharedState = ({ id, state }) => {
-    this.process.globalState[id] = state;
+  setTehState = ({ id, state }) => {
+    this.process.tehState[id] = state;
   };
 
-  getSharedState = id => this.process.globalState[id];
+  getTehState = id => this.process.tehState[id];
 
   // events
   sendImmediateEvent = event => {
@@ -276,13 +250,6 @@ export default class Process {
   sendAwaitEvent = event => {
     this.process.eventAwaitLoop.push({
       type: 'await',
-      ...event,
-    });
-  };
-
-  sendJoinEvent = event => {
-    this.process.eventJoinLoop.push({
-      type: 'join',
       ...event,
     });
   };

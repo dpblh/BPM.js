@@ -36,8 +36,7 @@ export default {
       },
       eventLoop: [],
       eventAwaitLoop: [],
-      eventJoinLoop: [],
-      globalState: {},
+      tehState: {},
     };
 
     const process = new Process(processSerialized);
