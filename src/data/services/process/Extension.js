@@ -1,9 +1,6 @@
 import _ from 'lodash';
-import mongoose from 'mongoose';
-import { script as rules } from './ParserRoles';
-import { Done } from './States';
 
-const getId = () => mongoose.Types.ObjectId().toString();
+import { getId } from './Utils';
 
 async function evalDefaultStep({
   outgoingSimpleEdge,
@@ -38,8 +35,7 @@ async function evalDefaultStep({
     if (event && event.type === 'immediate') {
       this.incrementImmediateDone(event);
     }
-    console.log('Конец продпрограммы');
-    throw new Done();
+    return console.log('Конец продпрограммы');
   }
 
   // выбираем следующую node
@@ -60,9 +56,7 @@ async function evalAwaitAllStep({
     event.edgesId.forEach(id => {
       const ingoingEdge = this.getEdge(id);
       // выполняем пресеты на edge
-      if (ingoingEdge.roles) {
-        rules.apply(ingoingEdge.roles).res.eval(stack);
-      }
+      ingoingEdge.rolesEval(stack);
     });
   }
   if (!event || !event.separatedId) {
@@ -99,8 +93,6 @@ async function evalAwaitAllStep({
         });
       });
     }
-
-    throw new Done();
   }
 }
 
@@ -110,27 +102,46 @@ export default {
       result: getVar('x') ** getVar('x'),
       status: 'done',
     }),
-    evalStep: evalDefaultStep,
+    behavior: evalDefaultStep,
   },
   test_2: {
     handler: (getVar, setVar) => ({
       result: getVar('y') - getVar('x'),
       status: 'done',
     }),
-    evalStep: evalDefaultStep,
+    behavior: evalDefaultStep,
   },
   test_await: {
     handler: (getVar, setVar) => ({
       result: 1,
       status: 'await',
     }),
-    evalStep: evalDefaultStep,
+    behavior: evalDefaultStep,
   },
   await_all: {
     handler: (getVar, setVar) => ({
       result: 1,
       status: 'done',
     }),
-    evalStep: evalAwaitAllStep,
+    behavior: evalAwaitAllStep,
+  },
+  throw_handler: {
+    handler: (getVar, setVar) => {
+      const a = null;
+      // this need throw exception
+      a.text;
+    },
+    behavior: evalDefaultStep,
+  },
+  throw_behavior: {
+    handler: (getVar, setVar) => ({
+      result: 1,
+      status: 'done',
+    }),
+    behavior: () => {
+      const a = null;
+      // this need throw exception
+      a.text;
+    },
   },
 };

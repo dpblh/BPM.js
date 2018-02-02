@@ -340,24 +340,62 @@ const seed = async () => {
     //
     // await Scheme.update({ _id: scheme4._id }, scheme3, { upsert: true });
 
-    const scheme5 = {
-      _id: 'await_all',
+    // const scheme5 = {
+    //   _id: 'await_all',
+    //   name: [
+    //     {
+    //       timestamp: Date.now(),
+    //       value: 'Схема await all',
+    //     },
+    //   ],
+    //   desc: [
+    //     {
+    //       timestamp: Date.now() - 20000,
+    //       value: 'Тест await',
+    //     },
+    //   ],
+    //   startNode: [],
+    // };
+    //
+    // await Scheme.update({ _id: scheme5._id }, scheme5, { upsert: true });
+
+    // const scheme6 = {
+    //   _id: 'throw_handler',
+    //   name: [
+    //     {
+    //       timestamp: Date.now(),
+    //       value: 'Схема throw handler',
+    //     },
+    //   ],
+    //   desc: [
+    //     {
+    //       timestamp: Date.now(),
+    //       value: 'Тест исключения внутри handler',
+    //     },
+    //   ],
+    //   startNode: [],
+    // };
+    //
+    // await Scheme.update({ _id: scheme6._id }, scheme6, { upsert: true });
+
+    const scheme7 = {
+      _id: 'throw_behavior',
       name: [
         {
           timestamp: Date.now(),
-          value: 'Схема await all',
+          value: 'Схема throw behavior',
         },
       ],
       desc: [
         {
-          timestamp: Date.now() - 20000,
-          value: 'Тест await',
+          timestamp: Date.now(),
+          value: 'Тест исключения внутри behavior',
         },
       ],
       startNode: [],
     };
 
-    await Scheme.update({ _id: scheme5._id }, scheme5, { upsert: true });
+    await Scheme.update({ _id: scheme7._id }, scheme7, { upsert: true });
   } catch (e) {
     console.log(e);
   }

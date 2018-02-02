@@ -375,5 +375,53 @@ describe('ParserRoles', () => {
     );
   });
 
-  //  4bfa14d2-6fe6-45d8-81bc-d981b44db5bb
+  test('Condition parse error', async () => {
+    expect.assertions(2);
+
+    const scheme = 'bc5e46f5-a192-4352-a207-3320a02cf8d7';
+
+    const { status, error } = await p.run(scheme, {
+      a: 1,
+    });
+
+    expect(status).toEqual('failed');
+    expect(error).toEqual(
+      'ParseConditionError: parse condition in position "a ˇ>== 1"',
+    );
+  });
+
+  test('Roles parse error', async () => {
+    expect.assertions(2);
+
+    const scheme = 'd9c8b548-652f-4b7b-b77c-66b4b03f3f28';
+
+    const { status, error } = await p.run(scheme, {
+      asd: 1,
+    });
+
+    expect(status).toEqual('failed');
+    expect(error).toEqual('ParseRolesError: parse roles in position "ˇa == 1"');
+  });
+
+  test('test throw handler', async () => {
+    expect.assertions(2);
+
+    const scheme = '2abd4140-bcd6-4dab-a29b-02236dc3f646';
+
+    const { status, error } = await p.run(scheme);
+
+    expect(status).toEqual('failed');
+    expect(error).toEqual("HandlerError: Cannot read property 'text' of null");
+  });
+
+  test('test throw behavior', async () => {
+    expect.assertions(2);
+
+    const scheme = '40d39cf6-6eff-4f52-a77a-e7851ce0ebaa';
+
+    const { status, error } = await p.run(scheme);
+
+    expect(status).toEqual('failed');
+    expect(error).toEqual("BehaviorError: Cannot read property 'text' of null");
+  });
 });

@@ -162,6 +162,9 @@ describe('ParserRoles', () => {
     expect(expression.apply('   !   true   ').res.eval(test1)).toEqual(false);
     expect(expression.apply('-1').res.eval(test1)).toEqual(-1);
     expect(expression.apply('-(a+b)').res.eval(test1)).toEqual(-3);
+    expect(expression.apply('>== 1')).toEqual(false);
+    expect(expression.apply('d >== 1').pos).toEqual(2);
+    expect(expression.apply('a == 1').pos).toEqual(6);
   });
   test('Function', () => {
     expect(Function.apply('random(10)').res.eval(test1)).toBeGreaterThan(0);

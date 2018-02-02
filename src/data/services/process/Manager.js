@@ -6,14 +6,21 @@ export default {
   async resume(processId, contextId, status) {
     const processSerialized = await ProcessSerializer.findById(processId);
     const process = new Process(processSerialized);
-    await process.resume({ contextId, status });
-    await ProcessSerializer.update(
-      { _id: process.process._id },
-      process.process,
-      {
-        upsert: true,
-      },
-    );
+
+    try {
+      await process.resume({ contextId, status });
+    } catch (ignore) {
+    } finally {
+      await ProcessSerializer.update(
+        { _id: process.process._id },
+        process.process,
+        {
+          upsert: true,
+        },
+      );
+    }
+
+    return process.process;
   },
   async run(schemeId, initState = {}) {
     const id = mongoose.Types.ObjectId();
@@ -40,10 +47,12 @@ export default {
     };
 
     const process = new Process(processSerialized);
-    await process.run({ schemeId });
-
-    await ProcessSerializer.create(process.process);
-
+    try {
+      await process.run({ schemeId });
+    } catch (ignore) {
+    } finally {
+      await ProcessSerializer.create(process.process);
+    }
     return process.process;
   },
 };

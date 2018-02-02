@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import mongoose from 'mongoose';
 
 import Scheme from '../../models/Scheme';
 import Node from '../../models/Node';
@@ -10,25 +9,24 @@ import NodeV from '../../virtualizers/node';
 import EdgeV from '../../virtualizers/edge';
 
 import { getVal, setLocalVal, setGlobalVal } from './Stack';
-import { script as rules } from './ParserRoles';
 
 import extension from './Extension';
 
-import { Await, Done } from './States';
-
-const getId = () => mongoose.Types.ObjectId().toString();
+import {
+  HandlerError,
+  BehaviorError,
+  ParseConditionError,
+  ParseRolesError,
+  TehError,
+} from './Errors';
+import { getId } from './Utils';
 
 const toMap = (array, key) =>
   array.reduce((r, c) => ({ ...r, [c[key]]: c }), {});
 
-// todo
-const runScheme = (scheme, stack) => {
-  const get = name => getVal(name, stack);
-  const set = (name, value) => setGlobalVal(name, value, stack);
-
-  return extension[scheme].handler(get, set);
-};
-
+// todo тест на путь по умолчанию
+// todo перенести virtual в model
+// todo убрать ws()
 export default class Process {
   constructor(process) {
     this.process = process;
@@ -46,7 +44,16 @@ export default class Process {
       try {
         await this.stepDone(currentNode, stack, event.contextId, event);
       } catch (e) {
-        if (e instanceof Done) {
+        if (
+          e instanceof HandlerError ||
+          e instanceof BehaviorError ||
+          e instanceof ParseConditionError ||
+          e instanceof ParseRolesError ||
+          e instanceof Error
+        ) {
+          process.status = 'failed';
+          process.error = e.type ? `${e.type}: ${e.message}` : e.message;
+          throw new TehError(e.message, process._id);
         }
       }
 
@@ -54,20 +61,31 @@ export default class Process {
       process.eventAwaitLoop.splice(index, 1);
 
       await this.eventLoop();
+      this.updateProcessStatus();
     }
   }
 
   async run({ schemeId }) {
     await this.init();
+    const { process } = this;
     const scheme = this.getScheme(schemeId);
     try {
       await this.evalScheme({ scheme, context: 'main' });
     } catch (e) {
-      if (e instanceof Done) {
-      } else if (e instanceof Done) {
+      if (
+        e instanceof HandlerError ||
+        e instanceof BehaviorError ||
+        e instanceof ParseConditionError ||
+        e instanceof ParseRolesError ||
+        e instanceof Error
+      ) {
+        process.status = 'failed';
+        process.error = e.type ? `${e.type}: ${e.message}` : e.message;
+        throw new TehError(e.message, process._id);
       }
     }
     await this.eventLoop();
+    this.updateProcessStatus();
   }
 
   eventLoop = async () => {
@@ -87,17 +105,12 @@ export default class Process {
         const node = this.getNode(event.nodeId);
         const ingoingEdge = this.getEdge(event.edgeId);
 
-        try {
-          await this.next({
-            node,
-            ingoingEdge,
-            context: event.contextId,
-            event,
-          });
-        } catch (e) {
-          if (e instanceof Done) {
-          }
-        }
+        await this.next({
+          node,
+          ingoingEdge,
+          context: event.contextId,
+          event,
+        });
 
         // process.context[event.name].finish_t = Date.now();
         // await eventLoop();
@@ -137,14 +150,12 @@ export default class Process {
       const stack = this.prepareStack(context);
 
       // выполняем пресеты на edge
-      if (ingoingEdge.roles) {
-        rules.apply(ingoingEdge.roles).res.eval(stack);
-      }
+      ingoingEdge.rolesEval(stack);
     }
 
     const stack = this.prepareStack(context);
 
-    const { status, result } = await runScheme(node.scheme, stack);
+    const { status, result } = await this.runScheme(node.scheme, stack);
 
     setLocalVal('result', result, stack);
 
@@ -157,7 +168,6 @@ export default class Process {
         nodeId: node.id,
         contextId: context,
       });
-      throw new Await();
     }
   }
 
@@ -175,12 +185,35 @@ export default class Process {
       return currentExp && !otherExp;
     });
 
-    await extension[currentNode.scheme].evalStep.bind(this)({
-      outgoingSimpleEdge,
-      outgoingImmediateEdges,
-      context,
-      event,
-    });
+    try {
+      await extension[currentNode.scheme].behavior.bind(this)({
+        outgoingSimpleEdge,
+        outgoingImmediateEdges,
+        context,
+        event,
+      });
+    } catch (e) {
+      if (e instanceof Error) {
+        throw new BehaviorError(e.message);
+      }
+      throw e;
+    }
+  }
+
+  runScheme(scheme, stack) {
+    const get = name => getVal(name, stack);
+    const set = (name, value) => setGlobalVal(name, value, stack);
+
+    try {
+      return extension[scheme].handler(get, set);
+    } catch (e) {
+      throw new HandlerError(e.message);
+    }
+  }
+
+  updateProcessStatus() {
+    const { process } = this;
+    process.status = process.eventAwaitLoop.length > 0 ? 'waiting' : 'finished';
   }
 
   incrementImmediateDone(event) {

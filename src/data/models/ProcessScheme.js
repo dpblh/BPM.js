@@ -8,6 +8,8 @@ const ProcessScheme = new mongoose.Schema({
   eventLoop: { type: Object, default: [] },
   eventAwaitLoop: { type: Object, default: [] },
   tehState: { type: Object, default: {} },
+  status: { type: String, default: 'running' },
+  error: { type: String },
 });
 
 export default ProcessScheme;
