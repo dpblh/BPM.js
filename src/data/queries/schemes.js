@@ -9,13 +9,12 @@
 import { GraphQLList as ListType } from 'graphql';
 import SchemeType from '../types/SchemeType';
 import Scheme from '../models/Scheme';
-import SchemeV from '../virtualizers/scheme';
 
 const scheme = {
   type: new ListType(SchemeType),
   async resolve({ request }) {
     const schema = await Scheme.find({ removed: { $ne: true } });
-    return schema.map(a => new SchemeV(a).attrs());
+    return schema.map(a => a.attrs());
   },
 };
 

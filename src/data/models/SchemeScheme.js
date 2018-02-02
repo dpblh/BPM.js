@@ -1,14 +1,12 @@
+import _ from 'lodash';
+
 import mongoose from './mongoose';
 import TimeStampScheme from './TimeStampScheme';
 
 import Node from '../models/Node';
 import Edge from '../models/Edge';
 
-import EdgeV from '../virtualizers/edge';
-import NodeV from '../virtualizers/node';
-import SchemeV from '../virtualizers/scheme';
-
-import _ from 'lodash';
+import { last } from './Utils';
 
 const SchemeScheme = new mongoose.Schema({
   _id: { type: String, required: true, unique: true },
@@ -18,11 +16,25 @@ const SchemeScheme = new mongoose.Schema({
   removed: { type: Boolean, default: false }, // todo make it as removed. in the future I must implement collector
 });
 
-// SchemeScheme.methods.id = function() {
-//   return this._id
-// } ;
+SchemeScheme.methods = {
+  async graph(timestamp = Date.now()) {
+    const nodes = await Node.find({});
+    const edges = await Edge.find({});
+
+    return SchemeScheme.statics.graph(timestamp, this, nodes, edges);
+  },
+  attrs(timestamp = Date.now()) {
+    return {
+      id: this.id,
+      removed: this.removed,
+      name: last(this.name, timestamp) || '',
+      desc: last(this.desc, timestamp) || '',
+      startNode: last(this.startNode, timestamp) || '',
+    };
+  },
+};
+
 SchemeScheme.statics.createFromDTO = function(scheme) {
-  console.log('create');
   const { id, name, desc, startNode, removed } = scheme;
   return this.create({
     _id: id,
@@ -35,10 +47,7 @@ SchemeScheme.statics.createFromDTO = function(scheme) {
 };
 
 SchemeScheme.statics.updateFromDTO = function(current, last) {
-  console.log('update');
   const { id, name, desc, startNode, removed } = current;
-  console.log(id, name, desc, startNode);
-  console.log(last);
   const update = { $push: {} };
   const query = { _id: id };
 
@@ -59,7 +68,7 @@ SchemeScheme.statics.graph = async function(
   nodes,
   edges,
 ) {
-  const startNode = new SchemeV(scheme).getV('startNode', timestamp);
+  const { startNode } = scheme.attrs(timestamp);
   if (!startNode)
     return {
       nodes: [],
@@ -67,10 +76,10 @@ SchemeScheme.statics.graph = async function(
     };
 
   const nodeMap = nodes
-    .map(edge => new NodeV(edge))
+    .map(node => node.attrs(timestamp))
     .reduce((nodes, node) => ({ ...nodes, [node.id]: node }), {});
   const edgeMap = edges
-    .map(edge => new EdgeV(edge))
+    .map(edge => edge.attrs(timestamp))
     .reduce((edges, edge) => ({ ...edges, [edge.id]: edge }), {});
 
   const readedNode = {};
@@ -80,9 +89,7 @@ SchemeScheme.statics.graph = async function(
       return;
     }
     const edges2 = _.values(
-      _.pickBy(edgeMap, (edge, id) =>
-        edge.equalsV('source', node.id, timestamp),
-      ),
+      _.pickBy(edgeMap, (edge, id) => edge.source === node.id),
     );
 
     readedNode[node.id] = node;
@@ -90,24 +97,13 @@ SchemeScheme.statics.graph = async function(
       (edges, edge) => ({ ...edges, [edge.id]: edge }),
       readedEdge,
     );
-    edges2
-      .map(edge => nodeMap[edge.getV('target', timestamp)])
-      .forEach(findSrc);
+    edges2.map(edge => nodeMap[edge.target]).forEach(findSrc);
   };
   findSrc(nodeMap[startNode]);
   return {
-    nodes: _.values(readedNode).map(a => a.attrs(timestamp)),
-    edges: _.values(readedEdge).map(a => a.attrs(timestamp)),
+    nodes: _.values(readedNode),
+    edges: _.values(readedEdge),
   };
-};
-
-SchemeScheme.methods = {
-  async graph(timestamp = Date.now()) {
-    const nodes = await Node.find({});
-    const edges = await Edge.find({});
-
-    return SchemeScheme.statics.graph(timestamp, this, nodes, edges);
-  },
 };
 
 export default SchemeScheme;

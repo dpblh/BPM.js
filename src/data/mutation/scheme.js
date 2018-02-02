@@ -17,11 +17,8 @@ import SchemeType from '../types/SchemeType';
 import Scheme from '../models/Scheme';
 import NodeInputType from '../types/NodeInputType';
 import EdgeInputType from '../types/EdgeInputType';
-import SchemeV from '../virtualizers/scheme';
 import Node from '../models/Node';
 import Edge from '../models/Edge';
-import NodeV from '../virtualizers/node';
-import EdgeV from '../virtualizers/edge';
 
 const nodeEquals = (n1, { name, desc, position }) =>
   n1.name === name && n1.desc === desc && n1.position === position;
@@ -49,14 +46,13 @@ const scheme = {
     try {
       // find or create
       const { nodesOrigin, edgesOrigin } = await Scheme.findOne({ _id: id })
-        // .then(s => new SchemeV(s).attrs())
         .then(async s => {
-          const last = new SchemeV(s).attrs();
+          const last = s.attrs();
           await Scheme.updateFromDTO(
             { id, name, desc, startNode, removed },
             last,
           );
-          return new SchemeV(s).graph().then(({ nodes, edges }) => ({
+          return s.graph().then(({ nodes, edges }) => ({
             nodesOrigin: nodes,
             edgesOrigin: edges,
           }));
@@ -71,10 +67,10 @@ const scheme = {
 
       // get last version graph
       const nodesOrigin2 = await Node.find({}).then(nodes =>
-        nodes.map(edge => new NodeV(edge)),
+        nodes.map(edge => edge.attrs()),
       );
       const edgesOrigin2 = await Edge.find({}).then(edges =>
-        edges.map(edge => new EdgeV(edge)),
+        edges.map(edge => edge.attrs()),
       );
       // const { nodesOrigin, edgesOrigin } = await schema
       //   .graph()
@@ -126,7 +122,7 @@ const scheme = {
     }
 
     const schema = await Scheme.findOne({ _id: id });
-    return new SchemeV(schema).attrs();
+    return schema.attrs();
   },
 };
 

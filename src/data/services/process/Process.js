@@ -4,10 +4,6 @@ import Scheme from '../../models/Scheme';
 import Node from '../../models/Node';
 import Edge from '../../models/Edge';
 
-import SchemeV from '../../virtualizers/scheme';
-import NodeV from '../../virtualizers/node';
-import EdgeV from '../../virtualizers/edge';
-
 import { getVal, setLocalVal, setGlobalVal } from './Stack';
 
 import extension from './Extension';
@@ -294,13 +290,13 @@ export default class Process {
       if (!this.inited) {
         const { timestamp } = this.process;
         this.schemes = await Scheme.find({}).then(s =>
-          s.map(edge => new SchemeV(edge).attrs(timestamp)),
+          s.map(edge => edge.attrs(timestamp)),
         );
         this.nodes = await Node.find({}).then(s =>
-          s.map(edge => new NodeV(edge).attrs(timestamp)),
+          s.map(edge => edge.attrs(timestamp)),
         );
         this.edges = await Edge.find({}).then(s =>
-          s.map(edge => new EdgeV(edge).attrs(timestamp)),
+          s.map(edge => edge.attrs(timestamp)),
         );
 
         this.schemeMap = toMap(this.schemes, 'id');

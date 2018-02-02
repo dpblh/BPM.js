@@ -1,5 +1,15 @@
 import mongoose from './mongoose';
 import TimeStampScheme from './TimeStampScheme';
+import { last } from './Utils';
+
+import {
+  expression as condition,
+  script as roles,
+} from '../services/process/ParserRoles';
+import {
+  ParseConditionError,
+  ParseRolesError,
+} from '../services/process/Errors';
 
 const EdgeScheme = new mongoose.Schema({
   _id: { type: String, required: true, unique: true },
@@ -9,6 +19,55 @@ const EdgeScheme = new mongoose.Schema({
   condition: { type: [new TimeStampScheme(String)] },
   immediate: { type: [new TimeStampScheme(Boolean)] },
 });
+
+EdgeScheme.methods.attrs = function(timestamp = Date.now()) {
+  return {
+    id: this.id,
+    source: last(this.source, timestamp),
+    target: last(this.target, timestamp),
+    roles: last(this.roles, timestamp),
+    condition: last(this.condition, timestamp),
+    immediate: last(this.immediate, timestamp),
+    conditionEval(stack) {
+      if (!this.condition) {
+        return true;
+      }
+      if (!this.eval) {
+        const parsed = condition.apply(this.condition);
+        if (parsed && parsed.pos === this.condition.length) {
+          this.eval = parsed.res.eval;
+        } else {
+          throw new ParseConditionError(
+            `parse condition in position "${`${this.condition.substr(
+              0,
+              parsed.pos,
+            )}ˇ${this.condition.substr(parsed.pos)}`}"`,
+          );
+        }
+      }
+      return this.eval(stack);
+    },
+    rolesEval(stack) {
+      if (!this.roles) {
+        return undefined;
+      }
+      if (!this.eval2) {
+        const parsed = roles.apply(this.roles);
+        if (parsed && parsed.pos === this.roles.length) {
+          this.eval2 = parsed.res.eval;
+        } else {
+          throw new ParseRolesError(
+            `parse roles in position "${`${this.roles.substr(
+              0,
+              parsed.pos,
+            )}ˇ${this.roles.substr(parsed.pos)}`}"`,
+          );
+        }
+      }
+      return this.eval2(stack);
+    },
+  };
+};
 
 EdgeScheme.statics.createFromDTOs = function(edges) {
   return this.create(
@@ -61,20 +120,5 @@ EdgeScheme.statics.disconnect = function({ id }) {
 EdgeScheme.statics.disconnectAll = function(edges) {
   return Promise.all(edges.map(n1 => this.disconnect(n1)));
 };
-
-// EdgeScheme.methods = {
-//   _source(timestamp = Date.now()) {
-//     return this.source.reverse().find(src => src.timestamp < timestamp);
-//   },
-//   _target(timestamp = Date.now()) {
-//     return this.target.reverse().find(src => src.timestamp < timestamp);
-//   },
-//   _roles(timestamp = Date.now()) {
-//     return this.roles.reverse().find(src => src.timestamp < timestamp);
-//   },
-//   _condition(timestamp = Date.now()) {
-//     return this.condition.reverse().find(src => src.timestamp < timestamp);
-//   },
-// };
 
 export default EdgeScheme;

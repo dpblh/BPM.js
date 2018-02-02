@@ -1,5 +1,6 @@
 import mongoose from './mongoose';
 import TimeStampScheme from './TimeStampScheme';
+import { last } from './Utils';
 
 const PositionScheme = new mongoose.Schema(
   {
@@ -16,6 +17,16 @@ const NodeScheme = new mongoose.Schema({
   position: { type: [new TimeStampScheme(PositionScheme)] },
   scheme: { type: String },
 });
+
+NodeScheme.methods.attrs = function(timestamp = Date.now()) {
+  return {
+    id: this.id,
+    name: last(this.name, timestamp),
+    desc: last(this.desc, timestamp),
+    position: last(this.position, timestamp),
+    scheme: this.scheme,
+  };
+};
 
 NodeScheme.statics.createFromDTOs = function(nodes) {
   return this.create(
@@ -47,17 +58,5 @@ NodeScheme.statics.updateFromDTO = function(current, last) {
 NodeScheme.statics.updateFromDTOs = function(nodes, originMap) {
   return Promise.all(nodes.map(n1 => this.updateFromDTO(n1, originMap[n1.id])));
 };
-
-// NodeScheme.methods = {
-//   _name(timestamp = Date.now()) {
-//     return this.name.reverse().find(src => src.timestamp < timestamp);
-//   },
-//   _desc(timestamp = Date.now()) {
-//     return this.desc.reverse().find(src => src.timestamp < timestamp);
-//   },
-//   _position(timestamp = Date.now()) {
-//     return this.position.reverse().find(src => src.timestamp < timestamp);
-//   },
-// };
 
 export default NodeScheme;

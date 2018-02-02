@@ -12,7 +12,6 @@ import {
 } from 'graphql';
 import SchemeType from '../types/SchemeType';
 import Scheme from '../models/Scheme';
-import SchemeV from '../virtualizers/scheme';
 
 const scheme = {
   type: SchemeType,
@@ -22,7 +21,7 @@ const scheme = {
   },
   async resolve(a, { id, timestamp }) {
     const schema = await Scheme.findOne({ _id: id });
-    return new SchemeV(schema).attrs(timestamp);
+    return schema.attrs(timestamp);
   },
 };
 
