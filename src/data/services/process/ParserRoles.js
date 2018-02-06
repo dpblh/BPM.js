@@ -196,7 +196,7 @@ export const yieldDef = reg(/yield\s+/)
   }));
 
 export const statement = parser((str, offset) =>
-  or(block, ifElse, defineVar, undefineVar, yieldDef).apply(str, offset),
+  or(block, ifElse, defineVar, undefineVar, yieldDef, argsAction).apply(str, offset),
 ).then(st => ({
   eval: stack => st.eval(stack),
 }));
@@ -265,6 +265,41 @@ export const operand = reg(/([-!])/)
     },
   }));
 
+export const argsAction = parser((str, offset) => {
+  const oneArg = nameSpace
+    .andl(reg(/\s*:\s*/))
+    .and(expression)
+    .then(([name, value]) => ({
+      name,
+      value,
+    }));
+
+  const args = oneArg
+    .and(
+      reg(/\s*,\s*/)
+        .andr(oneArg)
+        .rep(),
+    )
+    .opt();
+
+  return reg(/args\s*\(\s*{\s*/)
+    .andr(args)
+    .andl(reg(/\s*}\s*\)\s*/))
+    .apply(str, offset);
+}).then(args => ({
+  eval: stack => {
+    const argumeents = (args || []).reduce(
+      (arr, { name, value }) => ({
+        ...arr,
+        [name.eval(stack)]: value.eval(stack),
+      }),
+      {},
+    );
+    setLocalVal('arguments', argumeents, stack);
+    return argumeents;
+  },
+}));
+
 export default {
   script,
   ifElse,
@@ -276,4 +311,5 @@ export default {
   number,
   nameSpace,
   expression,
+  argsAction,
 };

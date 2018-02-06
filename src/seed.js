@@ -378,24 +378,43 @@ const seed = async () => {
     //
     // await Scheme.update({ _id: scheme6._id }, scheme6, { upsert: true });
 
-    const scheme7 = {
-      _id: 'throw_behavior',
+    // const scheme7 = {
+    //   _id: 'throw_behavior',
+    //   name: [
+    //     {
+    //       timestamp: Date.now(),
+    //       value: 'Схема throw behavior',
+    //     },
+    //   ],
+    //   desc: [
+    //     {
+    //       timestamp: Date.now(),
+    //       value: 'Тест исключения внутри behavior',
+    //     },
+    //   ],
+    //   startNode: [],
+    // };
+    //
+    // await Scheme.update({ _id: scheme7._id }, scheme7, { upsert: true });
+
+    const scheme8 = {
+      _id: 'test_arguments',
       name: [
         {
           timestamp: Date.now(),
-          value: 'Схема throw behavior',
+          value: 'Схема set arguments',
         },
       ],
       desc: [
         {
           timestamp: Date.now(),
-          value: 'Тест исключения внутри behavior',
+          value: 'Тест передачи аргументов',
         },
       ],
       startNode: [],
     };
 
-    await Scheme.update({ _id: scheme7._id }, scheme7, { upsert: true });
+    await Scheme.update({ _id: scheme8._id }, scheme8, { upsert: true });
   } catch (e) {
     console.log(e);
   }

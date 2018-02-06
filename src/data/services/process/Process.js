@@ -197,11 +197,12 @@ export default class Process {
   }
 
   runScheme(scheme, stack) {
+    const argumeents = getVal('arguments', stack);
     const get = name => getVal(name, stack);
     const set = (name, value) => setGlobalVal(name, value, stack);
 
     try {
-      return extension[scheme].handler(get, set);
+      return extension[scheme].handler(get, set, argumeents);
     } catch (e) {
       throw new HandlerError(e.message);
     }

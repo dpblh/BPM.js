@@ -12,6 +12,7 @@ import {
   undefineVar,
   ifElse,
   script,
+  argsAction,
 } from './ParserRoles';
 
 describe('ParserRoles', () => {
@@ -178,6 +179,52 @@ describe('ParserRoles', () => {
         'a( a, b   ,c, 1, "asd asd + asd", a.s.v, true, false, asd())',
       ).pos,
     ).toEqual(60);
+  });
+  test('argsAction', () => {
+    expect(argsAction.apply('args({})').res.eval(test1)).toEqual({});
+    expect(argsAction.apply('args({a:1})').res.eval(test1)).toEqual({ a: 1 });
+    expect(argsAction.apply("args({a:1,b:'qwe'})").res.eval(test1)).toEqual({
+      a: 1,
+      b: 'qwe',
+    });
+    expect(
+      argsAction
+        .apply("args    (  {  a  :  1,  b  :  'qwe'   }   )")
+        .res.eval(test1),
+    ).toEqual({ a: 1, b: 'qwe' });
+    expect(
+      argsAction
+        .apply(
+          `args({
+            a:a,
+            b:  'qwe',
+            test: b
+          })`,
+        )
+        .res.eval(test1),
+    ).toEqual({ a: 1, b: 'qwe', test: 2 });
+    expect(test1).toEqual([
+      {
+        edgeId: 'main',
+        state: {
+          a: 1,
+          b: 2,
+        },
+      },
+      {
+        edgeId: 'qwe',
+        state: {
+          a: 1,
+          arguments: { a: 1, b: 'qwe', test: 2 },
+        },
+      },
+    ]);
+
+    // expect(Function.apply('random(10)').res.eval(test1)).toBeLessThan(10);
+    // expect(Function.apply('round( 3 / 100 * 50)').res.eval(test1)).toEqual(2);
+    // expect(Function.apply('a( a , b )').pos).toEqual(10);
+    // expect(Function.apply('asd.sdf.dfg( a , b )').pos).toEqual(20);
+    // expect(Function.apply('a(a,b,c)').pos).toEqual(8);
   });
   describe('test `if else`', () => {
     test('if statement 1', () => {

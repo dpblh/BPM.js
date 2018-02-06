@@ -424,4 +424,15 @@ describe('ParserRoles', () => {
     expect(status).toEqual('failed');
     expect(error).toEqual("BehaviorError: Cannot read property 'text' of null");
   });
+
+  test('test set arguments', async () => {
+    expect.assertions(1);
+
+    const scheme = '1b25e257-e8e9-44d4-a659-6d413fb41063';
+
+    const { context: { main: { stack } } } = await p.run(scheme);
+
+    expect(stack[1].state).toEqual({arguments: { a:5, b: 6 }, result: 11});
+  });
+
 });

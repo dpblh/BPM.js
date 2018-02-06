@@ -144,4 +144,11 @@ export default {
       a.text;
     },
   },
+  test_arguments: {
+    handler: (getVar, setVar, args) => ({
+      result: args.a + args.b,
+      status: 'done',
+    }),
+    behavior: () => evalDefaultStep,
+  },
 };
