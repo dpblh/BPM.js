@@ -15,7 +15,7 @@ Prism.languages.roles = {
     pattern: /(["'])(?:\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,
     greedy: true,
   },
-  keyword: /\b(?:if|else|var|yield)\b/,
+  keyword: /\b(?:if|else|var|yield|args)\b/,
   boolean: /\b(?:true|false)\b/,
   function: /[a-z0-9_]+(?=\()/i,
   number: /\b(\d*\.?\d+e?\d*[dfl]?)\b/i,
