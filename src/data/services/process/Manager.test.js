@@ -21,7 +21,7 @@ describe('ParserRoles', () => {
       .then(({ context }) => {
         const stack = JSON.parse(JSON.stringify(context.main.stack));
 
-        return expect(stack).toEqual([
+        return expect(stack).toMatchObject([
           { state: { z: 1, result: 1, x: 3 }, edgeId: 'main' },
           {
             edgeId: 'a7f5418c-bc22-4363-be6c-3e791f753062',
@@ -126,7 +126,6 @@ describe('ParserRoles', () => {
     const scheme = '60f43ecc-285a-49d2-ad97-f6061c5e30bc';
 
     return p.run(scheme).then(({ context }) => {
-      console.log(context.main.stack);
       expect(context.main.stack[1].state.str).toEqual('fffff');
     });
   });
@@ -166,8 +165,6 @@ describe('ParserRoles', () => {
     const scheme = '4bfa14d2-6fe6-45d8-81bc-d981b44db5bb';
 
     let process = await p.run(scheme, {});
-    // .then(async process => {
-    console.log('!!!!!!!!!!!!!!!!!!!!!!!!_id_id_id_id_id', process._id);
 
     const event1 = process.eventAwaitLoop[0];
 
@@ -432,7 +429,6 @@ describe('ParserRoles', () => {
 
     const { context: { main: { stack } } } = await p.run(scheme);
 
-    expect(stack[1].state).toEqual({arguments: { a:5, b: 6 }, result: 11});
+    expect(stack[1].state).toEqual({ arguments: { a: 5, b: 6 }, result: 11 });
   });
-
 });

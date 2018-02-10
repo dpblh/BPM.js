@@ -7,6 +7,7 @@ async function evalDefaultStep({
   outgoingImmediateEdges,
   context,
   event,
+  next,
 }) {
   const separatedId = getId();
 
@@ -32,16 +33,12 @@ async function evalDefaultStep({
   }
 
   if (!outgoingSimpleEdge) {
-    if (event && event.type === 'immediate') {
+    if (event && event.type === 'immediate' && event.separatedId) {
       this.incrementImmediateDone(event);
     }
-    return console.log('Конец продпрограммы');
   }
 
-  // выбираем следующую node
-  const node = this.getNode(outgoingSimpleEdge.target);
-
-  await this.next({ node, ingoingEdge: outgoingSimpleEdge, context, event });
+  await next();
 }
 
 async function evalAwaitAllStep({
@@ -49,6 +46,8 @@ async function evalAwaitAllStep({
   outgoingImmediateEdges,
   context,
   event,
+  next,
+  done,
 }) {
   if (event && event.edgesId) {
     const stack = this.prepareStack(context);
@@ -60,11 +59,13 @@ async function evalAwaitAllStep({
     });
   }
   if (!event || !event.separatedId) {
-    evalDefaultStep.bind(this)({
+    await evalDefaultStep.bind(this)({
       outgoingSimpleEdge,
       outgoingImmediateEdges,
       context,
       event,
+      next,
+      done,
     });
   } else {
     this.incrementImmediateDone(event);
@@ -93,6 +94,7 @@ async function evalAwaitAllStep({
         });
       });
     }
+    done();
   }
 }
 
@@ -149,6 +151,6 @@ export default {
       result: args.a + args.b,
       status: 'done',
     }),
-    behavior: () => evalDefaultStep,
+    behavior: evalDefaultStep,
   },
 };

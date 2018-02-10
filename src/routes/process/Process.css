@@ -1,0 +1,40 @@
+.timeline {
+  width: 100%;
+  height: 100%;
+  bottom: 0;
+  z-index: 100;
+  transition: opacity ease-in-out 0.15s, transform ease-in-out 0.15s;
+}
+
+.timeline :global(.vis-item.vis-range) {
+  border-radius: 0;
+  border-style: none;
+  border-left: 2px solid transparent;
+}
+
+.timeline :global(.vis-labelset .vis-label .vis-inner) {
+  display: flex;
+  height: 100%;
+}
+
+.timeline :global(.vis-labelset .vis-label .vis-inner .inner) {
+  display: flex;
+  align-items: center;
+}
+
+.timeline :global(.vis-labelset .vis-label .vis-inner .inner .content) {
+  z-index: 2;
+}
+
+.timeline :global(.vis-labelset .vis-label .vis-inner .inner .context) {
+  position: absolute;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  left: 0;
+}
+
+.timeline :global(.vis-labelset .vis-label .vis-inner .inner .context .current),
+.timeline :global(.vis-labelset .vis-label .vis-inner .inner .context .parent) {
+  height: 100%;
+}

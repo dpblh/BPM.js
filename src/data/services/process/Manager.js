@@ -37,6 +37,7 @@ export default {
             {
               edgeId: 'main',
               state: initState,
+              start_t: Date.now(),
             },
           ],
         },

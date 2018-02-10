@@ -1,0 +1,12 @@
+.table {
+
+}
+
+.row {
+  display: flex;
+  height: 40px;
+}
+
+.cell {
+  padding: 0 10px;
+}

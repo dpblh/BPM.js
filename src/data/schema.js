@@ -17,6 +17,8 @@ import news from './queries/news';
 import historyOfScheme from './queries/historyOfScheme';
 import scheme from './queries/scheme';
 import schemes from './queries/schemes';
+import process from './queries/process';
+import processes from './queries/processes';
 import schemeM from './mutation/scheme';
 import resumeScheme from './mutation/resumeScheme';
 
@@ -29,6 +31,8 @@ const schema = new Schema({
       scheme,
       schemes,
       historyOfScheme,
+      process,
+      processes,
     },
   }),
   mutation: new ObjectType({

@@ -140,7 +140,9 @@ export default class Process {
       // добавляем стек
       this.process.context[context].stack.push({
         edgeId: ingoingEdge.id,
+        nodeId: node.id,
         state: {},
+        start_t: Date.now(),
       });
 
       const stack = this.prepareStack(context);
@@ -187,6 +189,32 @@ export default class Process {
         outgoingImmediateEdges,
         context,
         event,
+        // если не передавать аргументы, будут проставлены аргументы по умолчанию
+        next: async (args = {}) => {
+          if (this.process.context[context].stack.length)
+            this.process.context[context].stack[
+              this.process.context[context].stack.length - 1
+            ].finish_t = Date.now();
+
+          if (!args.ingoingEdge && !outgoingSimpleEdge) {
+            return console.log('Конец продпрограммы');
+          }
+
+          const node = this.getNode(outgoingSimpleEdge.target);
+
+          await this.next({
+            node: args.node || node,
+            ingoingEdge: args.ingoingEdge || outgoingSimpleEdge,
+            context,
+            event,
+          });
+        },
+        done: () => {
+          if (this.process.context[context].stack.length)
+            this.process.context[context].stack[
+              this.process.context[context].stack.length - 1
+            ].finish_t = Date.now();
+        },
       });
     } catch (e) {
       if (e instanceof Error) {
